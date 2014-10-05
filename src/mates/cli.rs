@@ -50,7 +50,12 @@ fn build_index(outfile: &Path, dir: &Path) {
         match item.all_values(&"EMAIL".into_string()) {
             Some(emails) => {
                 for email in emails.iter() {
-                    outf.write_str(format!("{}\t{}\n", email.get_raw_value(), name).as_slice());
+                    match outf.write_str(
+                        format!("{}\t{}\n", email.get_raw_value(), name).as_slice()
+                    ) {
+                        Ok(x) => (),
+                        Err(f) => fail!(f.desc)
+                    };
                 };
             },
             None => ()
