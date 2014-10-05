@@ -1,11 +1,11 @@
 #![feature(macro_rules)]
 
 extern crate getopts;
-use getopts::{optflag,getopts,OptGroup,usage};
+use getopts::{optflag,optopt,getopts,OptGroup,usage};
 use std::os;
 use std::collections::HashMap;
 use std::collections::hashmap::{Occupied, Vacant};
-use std::io::{fs, File};
+use std::io;
 use std::io::fs::PathExtensions;
 
 
@@ -18,11 +18,26 @@ fn get_env() -> HashMap<String, String> {
 }
 
 
-fn from_env<'a>(env: &'a HashMap<String, String>, key: &str) -> &'a String {
-    env.find_equiv(&key).expect(
+fn from_env<'a>(env: &'a HashMap<String, String>, key: &str) -> Option<&'a String> {
+    env.find_equiv(&key)
+}
+
+
+fn expect_env<'a>(env: &'a HashMap<String, String>, key: &str) -> &'a String {
+    from_env(env, key).expect(
         format!("The {} environment variable must be set.", key).as_slice()
     )
 }
+
+
+macro_rules! expect_or_this(
+    ($iterator:expr, $this: expr) => (
+        match $iterator {
+            Some(x) => x,
+            None => $this
+        }
+    )
+)
 
 
 fn build_index(outfile: &Path, dir: &Path) {
@@ -30,8 +45,8 @@ fn build_index(outfile: &Path, dir: &Path) {
         fail!("MATES_DIR must be a directory.");
     };
 
-    let mut outf = File::create(outfile);
-    let entries = match fs::readdir(dir) {
+    let mut outf = io::File::create(outfile);
+    let entries = match io::fs::readdir(dir) {
         Ok(x) => x,
         Err(f) => { fail!(f.desc) }
     };
@@ -39,7 +54,7 @@ fn build_index(outfile: &Path, dir: &Path) {
         if !entry.is_file() {
             continue;
         }
-        let itemstr = match File::open(entry).read_to_string() {
+        let itemstr = match io::File::open(entry).read_to_string() {
             Ok(x) => x,
             Err(f) => { fail!(format!("Failed to open {}: {}", entry.display(), f.desc)) }
         };
@@ -116,24 +131,15 @@ fn parse_item(s: &String) -> Item {
     rv
 }
 
-macro_rules! next_or_this(
-    ($iterator:expr, $this: expr) => (
-        match $iterator.next() {
-            Some(x) => x,
-            None => $this
-        }
-    )
-)
-
 
 fn parse_line(s: &String) -> (String, PropertyValue) {
     let mut kv_splitresult = s.as_slice().splitn(1, ':');
     let key_and_params = kv_splitresult.next().expect("");
-    let value = next_or_this!(kv_splitresult, "");
+    let value = expect_or_this!(kv_splitresult.next(), "");
 
     let mut kp_splitresult = key_and_params.splitn(1, ';');
     let key = kp_splitresult.next().expect("");
-    let params = next_or_this!(kp_splitresult, "");
+    let params = expect_or_this!(kp_splitresult.next(), "");
 
     (key.into_string(), PropertyValue {
         value: value.into_string(),
@@ -148,7 +154,8 @@ fn main() {
     let program = args[0].as_slice();
     let opts = [
         optflag("i", "index", "Create index."),
-        optflag("h", "help", "Print help.")
+        optflag("h", "help", "Print help."),
+        optopt("m", "mutt-search", "Search in index, for mutt search.", "")
     ];
 
     let matches = match getopts(args.tail(), opts) {
@@ -160,18 +167,46 @@ fn main() {
 
     let print_usage = || {
         println!("{}", usage(program, opts));
+        println!("Environment variables:");
+        println!("- MATES_INDEX: Path to index file, which is basically a cache of all");
+        println!("               contacts.");
+        println!("- MATES_DIR:   The vdir to use.");
+        println!("- MATES_GREP:  The grep executable to use.");
     };
 
     if matches.opt_present("h") {
         print_usage();
     } else if matches.opt_present("index") {
-        let index_file = from_env(&env, "MATES_INDEX");
-        let mates_dir = from_env(&env, "MATES_DIR");
+        let index_file = expect_env(&env, "MATES_INDEX");
+        let mates_dir = expect_env(&env, "MATES_DIR");
         println!("Rebuilding index file \"{}\"...", index_file);
         build_index(
             &Path::new(index_file.as_slice()),
             &Path::new(mates_dir.as_slice())
         );
+    } else if matches.opt_present("mutt-search") {
+        let index_file = expect_env(&env, "MATES_INDEX");
+        let default_grep = "grep".into_string();
+        let grep_cmd = expect_or_this!(from_env(&env, "MATES_GREP"), &default_grep);
+
+        // FIXME: Better way to write this? We already checked for presence of mutt-search before
+        let query = matches.opt_str("mutt-search").expect("This should never happen and yet it did.");
+        let process = match match io::Command::new(grep_cmd.as_slice())
+            .arg(query.as_slice())
+            .arg(index_file.as_slice())
+            .stdout(io::process::InheritFd(1))
+            .stderr(io::process::InheritFd(2))
+            .spawn() {
+                Ok(child) => child,
+                Err(e) => fail!("Failed to execute grep command: {}", e),
+            }.wait() {
+                Ok(code) => {
+                    if !code.success() {
+                        fail!("Grep command exited with code {}, aborting.", code);
+                    };
+                },
+                Err(e) => fail!("Failed to execute grep command: {}", e),
+            };
     } else {
         print_usage();
     };
