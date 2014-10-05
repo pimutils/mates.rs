@@ -6,6 +6,19 @@ use std::io::fs::PathExtensions;
 
 use item::parse_item;
 
+macro_rules! main_try {
+    ($result: expr, $errmsg: expr) => (
+        match $result {
+            Ok(m) => m,
+            Err(e) => {
+                println!($errmsg, e);
+                os::set_exit_status(1);
+                return;
+            }
+        }
+    )
+}
+
 fn get_env() -> HashMap<String, String> {
     let mut env = HashMap::new();
     env.extend(os::env().into_iter().filter(|&(ref key, ref value)| {
@@ -27,40 +40,36 @@ fn expect_env<'a>(env: &'a HashMap<String, String>, key: &str) -> &'a String {
 }
 
 
-fn build_index(outfile: &Path, dir: &Path) {
+fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
     if !dir.is_dir() {
-        fail!("MATES_DIR must be a directory.");
+        return Err(io::IoError {
+            kind: io::MismatchedFileTypeForOperation,
+            desc: "MATES_DIR must be a directory.",
+            detail: None
+        });
     };
 
     let mut outf = io::File::create(outfile);
-    let entries = match io::fs::readdir(dir) {
-        Ok(x) => x,
-        Err(f) => { fail!(f.desc) }
-    };
+    let entries = try!(io::fs::readdir(dir));
     for entry in entries.iter() {
         if !entry.is_file() {
             continue;
         }
-        let itemstr = match io::File::open(entry).read_to_string() {
-            Ok(x) => x,
-            Err(f) => { fail!(format!("Failed to open {}: {}", entry.display(), f.desc)) }
-        };
+        let itemstr = try!(io::File::open(entry).read_to_string());
         let item = parse_item(&itemstr);
         let name = item.single_value(&"FN".into_string());
         match item.all_values(&"EMAIL".into_string()) {
             Some(emails) => {
                 for email in emails.iter() {
-                    match outf.write_str(
+                    try!(outf.write_str(
                         format!("{}\t{}\n", email.get_raw_value(), name).as_slice()
-                    ) {
-                        Ok(x) => (),
-                        Err(f) => fail!(f.desc)
-                    };
+                    ))
                 };
             },
             None => ()
         };
     };
+    return Ok(());
 }
 
 
@@ -74,10 +83,7 @@ pub fn cli_main() {
         optopt("m", "mutt-search", "Search in index, for mutt search.", "")
     ];
 
-    let matches = match getopts(args.tail(), opts) {
-        Ok(m) => { m }
-        Err(f) => { fail!(format!("Failed to parse arguments: {}", f.to_err_msg())) }
-    };
+    let matches = main_try!(getopts(args.tail(), opts), "Failed to parse arguments: {}");
 
     let env = get_env();
 
@@ -92,14 +98,16 @@ pub fn cli_main() {
 
     if matches.opt_present("h") {
         print_usage();
+
     } else if matches.opt_present("index") {
         let index_file = expect_env(&env, "MATES_INDEX");
         let mates_dir = expect_env(&env, "MATES_DIR");
         println!("Rebuilding index file \"{}\"...", index_file);
-        build_index(
+        main_try!(build_index(
             &Path::new(index_file.as_slice()),
             &Path::new(mates_dir.as_slice())
-        );
+        ), "Failed to build index: {}");
+
     } else if matches.opt_present("mutt-search") {
         let index_file = expect_env(&env, "MATES_INDEX");
         let default_grep = "grep".into_string();
@@ -110,23 +118,19 @@ pub fn cli_main() {
 
         // FIXME: Better way to write this? We already checked for presence of mutt-search before
         let query = matches.opt_str("mutt-search").expect("This should never happen and yet it did.");
-        match match io::Command::new(grep_cmd.as_slice())
-            .arg(query.as_slice())
-            .arg(index_file.as_slice())
-            .stdout(io::process::InheritFd(1))
-            .stderr(io::process::InheritFd(2))
-            .spawn() {
-                Ok(child) => child,
-                Err(e) => fail!("Failed to execute grep command: {}", e),
-            }.wait() {
-                Ok(code) => {
-                    os::set_exit_status(match code {
-                        io::process::ExitStatus(x) => x,
-                        io::process::ExitSignal(x) => x,
-                    });
-                },
-                Err(e) => fail!("Failed to execute grep command: {}", e),
-            };
+        let mut cmd = io::Command::new(grep_cmd.as_slice());
+        cmd.arg(query.as_slice());
+        cmd.arg(index_file.as_slice());
+        cmd.stdout(io::process::InheritFd(1));
+        cmd.stderr(io::process::InheritFd(2));
+
+        let mut process = main_try!(cmd.spawn(), "Failed to execute grep command: {}");
+        let code = main_try!(process.wait(), "Failed to execute grep command: {}");
+        os::set_exit_status(match code {
+            io::process::ExitStatus(x) => x,
+            io::process::ExitSignal(x) => x,
+        });
+
     } else {
         print_usage();
     };
