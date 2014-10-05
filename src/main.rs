@@ -201,9 +201,10 @@ fn main() {
                 Err(e) => fail!("Failed to execute grep command: {}", e),
             }.wait() {
                 Ok(code) => {
-                    if !code.success() {
-                        fail!("Grep command exited with code {}, aborting.", code);
-                    };
+                    std::os::set_exit_status(match code {
+                        io::process::ExitStatus(x) => x,
+                        io::process::ExitSignal(x) => x,
+                    });
                 },
                 Err(e) => fail!("Failed to execute grep command: {}", e),
             };
