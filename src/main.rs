@@ -1,7 +1,7 @@
 #![feature(macro_rules)]
 
 extern crate getopts;
-use getopts::{optflag,optopt,getopts,OptGroup,usage};
+use getopts::{optflag,optopt,getopts,usage};
 use std::os;
 use std::collections::HashMap;
 use std::collections::hashmap::{Occupied, Vacant};
@@ -191,7 +191,7 @@ fn main() {
 
         // FIXME: Better way to write this? We already checked for presence of mutt-search before
         let query = matches.opt_str("mutt-search").expect("This should never happen and yet it did.");
-        let process = match match io::Command::new(grep_cmd.as_slice())
+        match match io::Command::new(grep_cmd.as_slice())
             .arg(query.as_slice())
             .arg(index_file.as_slice())
             .stdout(io::process::InheritFd(1))
