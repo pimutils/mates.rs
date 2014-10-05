@@ -133,10 +133,12 @@ fn parse_item(s: &String) -> Item {
 
 
 fn parse_line(s: &String) -> (String, PropertyValue) {
+    // FIXME: Better way to write this without expect?
     let mut kv_splitresult = s.as_slice().splitn(1, ':');
     let key_and_params = kv_splitresult.next().expect("");
     let value = expect_or_this!(kv_splitresult.next(), "");
 
+    // FIXME: Better way to write this without expect?
     let mut kp_splitresult = key_and_params.splitn(1, ';');
     let key = kp_splitresult.next().expect("");
     let params = expect_or_this!(kp_splitresult.next(), "");
