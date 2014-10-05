@@ -11,7 +11,7 @@ macro_rules! main_try {
         match $result {
             Ok(m) => m,
             Err(e) => {
-                println!($errmsg, e);
+                println!("{}: {}", $errmsg, e);
                 os::set_exit_status(1);
                 return;
             }
@@ -83,7 +83,7 @@ pub fn cli_main() {
         optopt("m", "mutt-search", "Search in index, for mutt search.", "")
     ];
 
-    let matches = main_try!(getopts(args.tail(), opts), "Failed to parse arguments: {}");
+    let matches = main_try!(getopts(args.tail(), opts), "Failed to parse arguments");
 
     let env = get_env();
 
@@ -106,7 +106,7 @@ pub fn cli_main() {
         main_try!(build_index(
             &Path::new(index_file.as_slice()),
             &Path::new(mates_dir.as_slice())
-        ), "Failed to build index: {}");
+        ), "Failed to build index");
 
     } else if matches.opt_present("mutt-search") {
         let index_file = expect_env(&env, "MATES_INDEX");
@@ -124,8 +124,9 @@ pub fn cli_main() {
         cmd.stdout(io::process::InheritFd(1));
         cmd.stderr(io::process::InheritFd(2));
 
-        let mut process = main_try!(cmd.spawn(), "Failed to execute grep command: {}");
-        let code = main_try!(process.wait(), "Failed to execute grep command: {}");
+        let cmd_error = format!("Failed to execute `{}`", cmd);
+        let mut process = main_try!(cmd.spawn(), cmd_error);
+        let code = main_try!(process.wait(), cmd_error);
         os::set_exit_status(match code {
             io::process::ExitStatus(x) => x,
             io::process::ExitSignal(x) => x,
