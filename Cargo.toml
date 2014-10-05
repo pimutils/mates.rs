@@ -1,5 +1,13 @@
 [package]
-
 name = "mates"
 version = "0.0.1"
 authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>"]
+
+[lib]
+name = "mates"
+path = "src/mates/lib.rs"
+
+[[bin]]
+name = "mates"
+test = false
+doc = false
