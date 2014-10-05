@@ -15,6 +15,11 @@ get a binary which only depends on a working ``grep`` command in your path.
 Run the binary with ``--help`` to list all environment variables that can be
 used for configuration. ``MATES_INDEX`` and ``MATES_DIR`` must be set.
 
+Before first usage and after each sync you need to recreate the index with
+``mates -i``.
+
+Features:
+
 - Configure mutt to use mates:
 
   ```
