@@ -125,6 +125,7 @@ pub fn cli_main() {
         cmd.stderr(io::process::InheritFd(2));
 
         let cmd_error = format!("Failed to execute `{}`", cmd);
+        println!("");  // For some reason mutt requires an empty line
         let mut process = main_try!(cmd.spawn(), cmd_error);
         let code = main_try!(process.wait(), cmd_error);
         os::set_exit_status(match code {
