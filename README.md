@@ -1,7 +1,11 @@
 # Mates
 
 A very simple addressbook program to be used together with
-[vdirsyncer](https://github.com/untitaker/vdirsyncer).
+[vdirsyncer](https://github.com/untitaker/vdirsyncer). It was written as an
+experiment to learn Rust, and it might contain hideous code. While it works
+fine for me (and can't do much damage due to its limited featureset), you're
+probably better off using one of the [alternatives listed in vdirsyncer's
+documentation](http://vdirsyncer.readthedocs.org/en/latest/supported.html#client-applications).
 
 
 ## Installation
