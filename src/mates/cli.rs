@@ -56,8 +56,17 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
             continue;
         }
 
+        print!("Processing {}\n", entry.display());
+
         let itemstr = try!(io::File::open(entry).read_to_string());
-        let item = parse_item(&itemstr);
+        let item = match parse_item(&itemstr) {
+            Ok(item) => item,
+            Err(e) => {
+                println!("Error: Failed to parse item {}: {}\n", entry.display(), e);
+                os::set_exit_status(1);
+                continue;
+            }
+        };
 
         let name = match item.single_value(&"FN".into_string()) {
             Some(name) => name,
@@ -70,7 +79,7 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
         let emails = match item.all_values(&"EMAIL".into_string()) {
             Some(emails) => emails,
             None => {
-                print!("Warning: No emails in {}, skipping.\n", entry.display());
+                print!("Warning: No emails for {} ({}), skipping.\n", name, entry.display());
                 continue;
             }
         };
