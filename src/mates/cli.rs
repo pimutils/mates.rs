@@ -29,7 +29,7 @@ fn get_env() -> HashMap<String, String> {
 
 
 fn from_env<'a>(env: &'a HashMap<String, String>, key: &str) -> Option<&'a String> {
-    env.find_equiv(&key)
+    env.find_equiv(key)
 }
 
 
@@ -55,18 +55,30 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
         if !entry.is_file() {
             continue;
         }
+
         let itemstr = try!(io::File::open(entry).read_to_string());
         let item = parse_item(&itemstr);
-        let name = item.single_value(&"FN".into_string());
-        match item.all_values(&"EMAIL".into_string()) {
-            Some(emails) => {
-                for email in emails.iter() {
-                    try!(outf.write_str(
-                        format!("{}\t{}\n", email.get_raw_value(), name).as_slice()
-                    ))
-                };
-            },
-            None => ()
+
+        let name = match item.single_value(&"FN".into_string()) {
+            Some(name) => name,
+            None => {
+                print!("Warning: No name in {}, skipping.\n", entry.display());
+                continue;
+            }
+        };
+
+        let emails = match item.all_values(&"EMAIL".into_string()) {
+            Some(emails) => emails,
+            None => {
+                print!("Warning: No emails in {}, skipping.\n", entry.display());
+                continue;
+            }
+        };
+
+        for email in emails.iter() {
+            try!(outf.write_str(
+                format!("{}\t{}\n", email.get_raw_value(), name).as_slice()
+            ))
         };
     };
     return Ok(());
