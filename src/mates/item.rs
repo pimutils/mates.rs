@@ -57,6 +57,7 @@ item -> Item
 
 prop -> (String, PropertyValue)
     = k:prop_name p:(";" p:prop_params {p})? ":" v:prop_value {
+        print!("{} => {}\n", k, v);
         (k, PropertyValue {
             value: v,
             params: match p { Some(x) => x, None => "".to_string() }
@@ -83,4 +84,8 @@ eol = "\n" / "\r\n" / "\r" / "\u2028" / "\u2029"
 
 pub fn parse_item(s: &String) -> Result<Item, String> {
     parser::item(s.as_slice())
+}
+
+pub fn parse_item_from_borrowed_string(s: &str) -> Result<Item, String> {
+    parser::item(s)
 }
