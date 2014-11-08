@@ -76,14 +76,7 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
             }
         };
 
-        let emails = match item.all_values(&"EMAIL".into_string()) {
-            Some(emails) => emails,
-            None => {
-                print!("Warning: No emails for {} ({}), skipping.\n", name, entry.display());
-                continue;
-            }
-        };
-
+        let emails = item.all_values(&"EMAIL".into_string());
         for email in emails.iter() {
             try!(outf.write_str(
                 format!("{}\t{}\n", email.get_raw_value(), name).as_slice()

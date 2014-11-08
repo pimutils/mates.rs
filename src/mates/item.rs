@@ -2,6 +2,7 @@
 extern crate peg_syntax_ext;
 
 use std::collections::HashMap;
+use std::collections::hashmap::{Occupied, Vacant};
 
 pub struct PropertyValue {
     params: String,
@@ -16,9 +17,17 @@ impl PropertyValue {
 
 pub struct Item {
     pub props: HashMap<String, Vec<PropertyValue>>,
+    empty_prop_vector: Vec<PropertyValue>
 }
 
 impl Item {
+    fn new() -> Item {
+        Item {
+            props: HashMap::new(),
+            empty_prop_vector: vec![]
+        }
+    }
+
     pub fn single_value(&self, key: &String) -> Option<&String> {
         match self.props.find(key) {
             Some(x) => { if x.len() > 0 { Some(x[0].get_raw_value()) } else { None } },
@@ -26,30 +35,33 @@ impl Item {
         }
     }
 
-    pub fn all_values(&self, key: &String) -> Option<&Vec<PropertyValue>> {
-        self.props.find(key)
+    pub fn all_values_mut(&mut self, key: String) -> &mut Vec<PropertyValue> {
+        match self.props.entry(key) {
+            Occupied(values) => values.into_mut(),
+            Vacant(values) => values.set(vec![])
+        }
+    }
+
+    pub fn all_values(&self, key: &String) -> &Vec<PropertyValue> {
+        match self.props.find(key) {
+            Some(values) => values,
+            None => &self.empty_prop_vector
+        }
     }
 }
 
 
 peg! parser(r#"
 use super::{Item,PropertyValue};
-use std::collections::HashMap;
-use std::collections::hashmap::{Occupied, Vacant};
 
 #[pub]
 
 item -> Item
     = p:prop ++ eol {
-        let mut rv = Item {
-            props: HashMap::new()
-        };
+        let mut rv = Item::new();
 
         for (k, v) in p.into_iter() {
-            match rv.props.entry(k) {
-                Occupied(values) => { values.into_mut().push(v); },
-                Vacant(values) => { values.set(vec![v]); }
-            };
+            rv.all_values_mut(k).push(v);
         };
         rv
     }
@@ -57,7 +69,6 @@ item -> Item
 
 prop -> (String, PropertyValue)
     = k:prop_name p:(";" p:prop_params {p})? ":" v:prop_value {
-        print!("{} => {}\n", k, v);
         (k, PropertyValue {
             value: v,
             params: match p { Some(x) => x, None => "".to_string() }

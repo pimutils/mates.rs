@@ -1,6 +1,5 @@
 #![feature(globs,macro_rules)]
 extern crate mates;
-use std::collections::HashMap;
 use mates::item::parse_item;
 
 macro_rules! s(
