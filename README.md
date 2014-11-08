@@ -1,5 +1,7 @@
 # Mates
 
+[![Build Status](https://travis-ci.org/untitaker/mates.rs.svg?branch=master)](https://travis-ci.org/untitaker/mates.rs)
+
 A very simple addressbook program to be used together with
 [vdirsyncer](https://github.com/untitaker/vdirsyncer). It was written as an
 experiment to learn Rust, and it might contain hideous code. While it works
