@@ -1,6 +1,7 @@
-use std::collections::HashMap;
-use std::collections::hashmap::{Occupied, Vacant};
+#[phase(plugin)]
+extern crate peg_syntax_ext;
 
+use std::collections::HashMap;
 
 pub struct PropertyValue {
     params: String,
@@ -14,7 +15,7 @@ impl PropertyValue {
 
 
 pub struct Item {
-    props: HashMap<String, Vec<PropertyValue>>,
+    pub props: HashMap<String, Vec<PropertyValue>>,
 }
 
 impl Item {
@@ -31,57 +32,55 @@ impl Item {
 }
 
 
-pub fn parse_item(s: &String) -> Item {
-    let mut linebuffer = String::new();
-    let mut line: String;
-    let mut is_continuation: bool;
-    let mut rv = Item {
-        props: HashMap::new()
-    };
+peg! parser(r#"
+use super::{Item,PropertyValue};
+use std::collections::HashMap;
+use std::collections::hashmap::{Occupied, Vacant};
 
-    for strline in s.as_slice().split('\n') {
-        line = strline.into_string();
-        is_continuation = false;
-        while line.as_slice().char_at(0).is_whitespace() {
-            is_continuation = true;
-            line.remove(0);
+#[pub]
+
+item -> Item
+    = p:prop ++ eol {
+        let mut rv = Item {
+            props: HashMap::new()
         };
 
-        if !is_continuation && linebuffer.len() > 0 {
-            let (propkey, propvalue) = parse_line(&linebuffer);
-            match rv.props.entry(propkey) {
-                Occupied(values) => { values.into_mut().push(propvalue); },
-                Vacant(values) => { values.set(vec![propvalue]); }
+        for (k, v) in p.into_iter() {
+            match rv.props.entry(k) {
+                Occupied(values) => { values.into_mut().push(v); },
+                Vacant(values) => { values.set(vec![v]); }
             };
-            linebuffer.clear();
         };
+        rv
+    }
 
-        linebuffer.push_str(line.as_slice());
-    };
-    rv
+
+prop -> (String, PropertyValue)
+    = k:prop_name p:(";" p:prop_params {p})? ":" v:prop_value {
+        (k, PropertyValue {
+            value: v,
+            params: match p { Some(x) => x, None => "".to_string() }
+        })
+    }
+
+prop_name -> String
+    = name_char+ { match_str.into_string() }
+
+prop_params -> String
+    = prop_char+ { match_str.into_string() }
+
+prop_value -> String
+    = value_char+ { match_str.into_string() }
+
+// Characters
+name_char = ([a-zA-Z] / "-")
+prop_char = name_char / [=;]
+value_char = !eol .
+eol = "\n" / "\r\n" / "\r" / "\u2028" / "\u2029"
+
+"#)
+
+
+pub fn parse_item(s: &String) -> Result<Item, String> {
+    parser::item(s.as_slice())
 }
-
-
-fn parse_line(s: &String) -> (String, PropertyValue) {
-    // FIXME: Better way to write this without expect?
-    let mut kv_splitresult = s.as_slice().splitn(1, ':');
-    let key_and_params = kv_splitresult.next().expect("");
-    let value = match kv_splitresult.next() {
-        Some(x) => x,
-        None => ""
-    };
-
-    // FIXME: Better way to write this without expect?
-    let mut kp_splitresult = key_and_params.splitn(1, ';');
-    let key = kp_splitresult.next().expect("");
-    let params = match kp_splitresult.next() {
-        Some(x) => x,
-        None => ""
-    };
-
-    (key.into_string(), PropertyValue {
-        value: value.into_string(),
-        params: params.into_string()
-    })
-}
-
