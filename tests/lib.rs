@@ -1,11 +1,16 @@
-#![feature(globs)]
+#![feature(globs,macro_rules)]
 extern crate mates;
 use std::collections::HashMap;
-use mates::item::parse_item_from_borrowed_string;
+use mates::item::parse_item;
+
+macro_rules! s(
+    ($i:expr) => (&$i.into_string());
+)
+
 
 #[test]
 fn test_wikipedia_1() {
-    let item = parse_item_from_borrowed_string(
+    let item = parse_item(s!(
         "BEGIN:VCARD\n\
         VERSION:2.1\n\
         N:Mustermann;Erika\n\
@@ -18,8 +23,8 @@ fn test_wikipedia_1() {
         ADR;HOME:;;Heidestrasse 17;Koeln;;51147;Deutschland\n\
         EMAIL;PREF;INTERNET:erika@mustermann.de\n\
         REV:20140301T221110Z\n\
-        END:VCARD").unwrap();
+        END:VCARD")).unwrap();
 
-    assert_eq!(item.single_value(&"FN".into_string()), Some(&"Erika Mustermann".into_string()));
-    assert_eq!(item.single_value(&"N".into_string()), Some(&"Mustermann;Erika".into_string()));
+    assert_eq!(item.single_value(s!("FN")), Some(s!("Erika Mustermann")));
+    assert_eq!(item.single_value(s!("N")),  Some(s!("Mustermann;Erika")));
 }

@@ -85,7 +85,3 @@ eol = "\n" / "\r\n" / "\r" / "\u2028" / "\u2029"
 pub fn parse_item(s: &String) -> Result<Item, String> {
     parser::item(s.as_slice())
 }
-
-pub fn parse_item_from_borrowed_string(s: &str) -> Result<Item, String> {
-    parser::item(s)
-}
