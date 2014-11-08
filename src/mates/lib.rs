@@ -3,6 +3,6 @@
 #![feature(phase,macro_rules)]
 
 extern crate getopts;
+extern crate vobject;
 
 pub mod cli;
-pub mod item;

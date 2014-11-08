@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::io;
 use std::io::fs::PathExtensions;
 
-use item::parse_item;
+use vobject::parse_item;
 
 macro_rules! main_try {
     ($result: expr, $errmsg: expr) => (

@@ -3,9 +3,6 @@ name = "mates"
 version = "0.0.1"
 authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>"]
 
-[dependencies.peg]
-git = "https://github.com/kevinmehall/rust-peg.git"
-
 [lib]
 name = "mates"
 path = "src/mates/lib.rs"
@@ -14,3 +11,6 @@ path = "src/mates/lib.rs"
 name = "mates"
 test = false
 doc = false
+
+[dependencies.vobject]
+git = "https://github.com/untitaker/rust-vobject.git"
