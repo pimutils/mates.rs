@@ -2,7 +2,7 @@
 extern crate peg_syntax_ext;
 
 use std::collections::HashMap;
-use std::collections::hashmap::{Occupied, Vacant};
+use std::collections::hash_map::{Occupied, Vacant};
 
 pub struct PropertyValue {
     params: String,
@@ -27,7 +27,7 @@ impl Item {
     }
 
     pub fn single_value(&self, key: &String) -> Option<&String> {
-        match self.props.find(key) {
+        match self.props.get(key) {
             Some(x) => { if x.len() > 0 { Some(x[0].get_raw_value()) } else { None } },
             None => { None }
         }
@@ -42,7 +42,7 @@ impl Item {
 
     pub fn all_props(&self, key: &String) -> &[PropertyValue] {
         static EMPTY: &'static [PropertyValue] = [];
-        match self.props.find(key) {
+        match self.props.get(key) {
             Some(values) => values.as_slice(),
             None => EMPTY
         }
