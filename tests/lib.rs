@@ -27,7 +27,7 @@ fn test_wikipedia_1() {
     assert_eq!(item.single_value(s!("FN")), Some(s!("Erika Mustermann")));
     assert_eq!(item.single_value(s!("N")),  Some(s!("Mustermann;Erika")));
 
-    let mut tel_values = item.all_values(s!("TEL")).iter().map(|x| x.get_raw_value());
+    let mut tel_values = item.all_props(s!("TEL")).iter().map(|x| x.get_raw_value());
     assert_eq!(tel_values.next().unwrap(), s!("(0221) 9999123"));
     assert_eq!(tel_values.next().unwrap(), s!("(0221) 1234567"));
     assert!(tel_values.next().is_none());

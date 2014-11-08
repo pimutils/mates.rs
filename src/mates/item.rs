@@ -33,14 +33,14 @@ impl Item {
         }
     }
 
-    pub fn all_values_mut(&mut self, key: String) -> &mut Vec<PropertyValue> {
+    pub fn all_props_mut(&mut self, key: String) -> &mut Vec<PropertyValue> {
         match self.props.entry(key) {
             Occupied(values) => values.into_mut(),
             Vacant(values) => values.set(vec![])
         }
     }
 
-    pub fn all_values(&self, key: &String) -> &[PropertyValue] {
+    pub fn all_props(&self, key: &String) -> &[PropertyValue] {
         static EMPTY: &'static [PropertyValue] = [];
         match self.props.find(key) {
             Some(values) => values.as_slice(),
@@ -60,7 +60,7 @@ item -> Item
         let mut rv = Item::new();
 
         for (k, v) in p.into_iter() {
-            rv.all_values_mut(k).push(v);
+            rv.all_props_mut(k).push(v);
         };
         rv
     }

@@ -76,7 +76,7 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
             }
         };
 
-        let emails = item.all_values(&"EMAIL".into_string());
+        let emails = item.all_props(&"EMAIL".into_string());
         for email in emails.iter() {
             try!(outf.write_str(
                 format!("{}\t{}\n", email.get_raw_value(), name).as_slice()
