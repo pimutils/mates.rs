@@ -16,15 +16,13 @@ impl PropertyValue {
 
 
 pub struct Item {
-    pub props: HashMap<String, Vec<PropertyValue>>,
-    empty_prop_vector: Vec<PropertyValue>
+    pub props: HashMap<String, Vec<PropertyValue>>
 }
 
 impl Item {
     fn new() -> Item {
         Item {
-            props: HashMap::new(),
-            empty_prop_vector: vec![]
+            props: HashMap::new()
         }
     }
 
@@ -42,10 +40,11 @@ impl Item {
         }
     }
 
-    pub fn all_values(&self, key: &String) -> &Vec<PropertyValue> {
+    pub fn all_values(&self, key: &String) -> &[PropertyValue] {
+        static EMPTY: &'static [PropertyValue] = [];
         match self.props.find(key) {
-            Some(values) => values,
-            None => &self.empty_prop_vector
+            Some(values) => values.as_slice(),
+            None => EMPTY
         }
     }
 }
