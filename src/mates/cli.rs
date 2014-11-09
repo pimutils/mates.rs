@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::io;
 use std::io::fs::PathExtensions;
 
-use vobject::parse_item;
+use vobject::parse_component;
 
 macro_rules! main_try {
     ($result: expr, $errmsg: expr) => (
@@ -59,7 +59,7 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
         print!("Processing {}\n", entry.display());
 
         let itemstr = try!(io::File::open(entry).read_to_string());
-        let item = match parse_item(&itemstr) {
+        let item = match parse_component(&itemstr) {
             Ok(item) => item,
             Err(e) => {
                 println!("Error: Failed to parse item {}: {}\n", entry.display(), e);
@@ -68,8 +68,8 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
             }
         };
 
-        let name = match item.single_value(&"FN".into_string()) {
-            Some(name) => name,
+        let name = match item.single_prop(&"FN".into_string()) {
+            Some(name) => name.get_raw_value(),
             None => {
                 print!("Warning: No name in {}, skipping.\n", entry.display());
                 continue;
