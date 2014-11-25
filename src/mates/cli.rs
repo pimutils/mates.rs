@@ -79,7 +79,7 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
         let emails = item.all_props(&"EMAIL".into_string());
         for email in emails.iter() {
             try!(outf.write_str(
-                format!("{}\t{}\n", email.get_raw_value(), name).as_slice()
+                format!("{} <{}>\n", name, email.get_raw_value()).as_slice()
             ))
         };
     };
