@@ -3,6 +3,7 @@ use std::os;
 use std::collections::HashMap;
 use std::io;
 use std::io::fs::PathExtensions;
+use std::borrow::ToOwned;
 
 use vobject::parse_component;
 
@@ -28,13 +29,8 @@ fn get_env() -> HashMap<String, String> {
 }
 
 
-fn from_env<'a>(env: &'a HashMap<String, String>, key: &str) -> Option<&'a String> {
-    env.find_equiv(key)
-}
-
-
 fn expect_env<'a>(env: &'a HashMap<String, String>, key: &str) -> &'a String {
-    from_env(env, key).expect(
+    env.get(key).expect(
         format!("The {} environment variable must be set.", key).as_slice()
     )
 }
@@ -68,7 +64,7 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
             }
         };
 
-        let name = match item.single_prop(&"FN".into_string()) {
+        let name = match item.single_prop("FN") {
             Some(name) => name.get_raw_value(),
             None => {
                 print!("Warning: No name in {}, skipping.\n", entry.display());
@@ -76,7 +72,7 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
             }
         };
 
-        let emails = item.all_props(&"EMAIL".into_string());
+        let emails = item.all_props("EMAIL");
         for email in emails.iter() {
             try!(outf.write_str(
                 format!("{} <{}>\n", name, email.get_raw_value()).as_slice()
@@ -97,12 +93,12 @@ pub fn cli_main() {
         optopt("m", "mutt-search", "Search in index, for mutt search.", "")
     ];
 
-    let matches = main_try!(getopts(args.tail(), opts), "Failed to parse arguments");
+    let matches = main_try!(getopts(args.tail(), &opts), "Failed to parse arguments");
 
     let env = get_env();
 
     let print_usage = || {
-        println!("{}", usage(program, opts));
+        println!("{}", usage(program, &opts));
         println!("Environment variables:");
         println!("- MATES_INDEX: Path to index file, which is basically a cache of all");
         println!("               contacts.");
@@ -124,8 +120,8 @@ pub fn cli_main() {
 
     } else if matches.opt_present("mutt-search") {
         let index_file = expect_env(&env, "MATES_INDEX");
-        let default_grep = "grep".into_string();
-        let grep_cmd = match from_env(&env, "MATES_GREP") {
+        let default_grep = "grep".to_owned();
+        let grep_cmd = match env.get("MATES_GREP") {
             Some(x) => x,
             None => &default_grep
         };
