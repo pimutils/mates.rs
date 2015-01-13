@@ -7,14 +7,14 @@ dependencies = [
 
 [[package]]
 name = "peg"
-version = "0.1.2"
-source = "git+https://github.com/kevinmehall/rust-peg.git#325232d93eb9eb1776c885e6abff1ad2c0959a0d"
+version = "0.1.3"
+source = "git+https://github.com/kevinmehall/rust-peg.git#424081b10e42d09d769657b3a39ad3d491b1193d"
 
 [[package]]
 name = "vobject"
 version = "0.0.1"
-source = "git+https://github.com/untitaker/rust-vobject.git#1e4fa6325350fe22978d5160a652d8d370d0751d"
+source = "git+https://github.com/untitaker/rust-vobject.git#078e5a351fa355f3fab5b2f43e86c2c5e31921f7"
 dependencies = [
- "peg 0.1.2 (git+https://github.com/kevinmehall/rust-peg.git)",
+ "peg 0.1.3 (git+https://github.com/kevinmehall/rust-peg.git)",
 ]
 
