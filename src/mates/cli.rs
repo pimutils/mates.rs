@@ -97,7 +97,7 @@ pub fn cli_main() {
 
     let env = get_env();
 
-    let print_usage = || {
+    let print_usage = |&:| {
         println!("{}", usage(program, &opts));
         println!("Environment variables:");
         println!("- MATES_INDEX: Path to index file, which is basically a cache of all");
