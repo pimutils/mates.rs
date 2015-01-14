@@ -1,4 +1,4 @@
-extern crate regex;
+#![allow(unstable)]
 extern crate getopts;
 extern crate vobject;
 

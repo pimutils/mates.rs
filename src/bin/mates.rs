@@ -1,5 +1,3 @@
-#![feature(macro_rules)]
-
 extern crate mates;
 use mates::cli;
 

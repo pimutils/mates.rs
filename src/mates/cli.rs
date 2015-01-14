@@ -1,10 +1,8 @@
-use getopts::{optflag,optopt,getopts,usage};
 use std::os;
 use std::collections::HashMap;
 use std::io;
 use std::io::fs::PathExtensions;
 use std::borrow::ToOwned;
-use std::str;
 
 use vobject::parse_component;
 
@@ -90,7 +88,7 @@ pub fn cli_main() {
     let mut args = os::args().into_iter();
     let program = args.next().unwrap_or("mates".to_string());
 
-    let help = "Usage: mates COMMAND
+    let help = format!("Usage: {} COMMAND
 Commands:
     index:
         Rewrite/create the index.
@@ -104,7 +102,7 @@ Commands:
         Take mail from stdin, add sender to contacts. Print filename.
     edit <file-or-query>:
         Open contact (given by filepath or search-string) in $MATES_EDITOR. If
-        the file is cleared, the contact is removed.";
+        the file is cleared, the contact is removed.", program);
 
     let print_help = |&:| {
         println!("{}", help);
@@ -141,7 +139,7 @@ Commands:
         }
         _ => {
             print_help();
-            if(command != "help" && command != "--help" && command != "-h") {
+            if command != "help" && command != "--help" && command != "-h" {
                 os::set_exit_status(1);
             }
         }
@@ -151,7 +149,7 @@ Commands:
 fn mutt_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<()> {
     println!("");  // For some reason mutt requires an empty line
     for item in try!(index_query(env, query)) {
-        if(item.email.len() > 0 && item.name.len() > 0) {
+        if item.email.len() > 0 && item.name.len() > 0 {
             println!("{}\t{}\t{}", item.email, item.name, item.filepath);
         };
     };
@@ -160,7 +158,7 @@ fn mutt_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<(
 
 fn file_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<()> {
     for item in try!(index_query(env, query)) {
-        if(item.filepath.len() > 0) {
+        if item.filepath.len() > 0 {
             println!("{}", item.filepath)
         };
     };
@@ -169,7 +167,7 @@ fn file_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<(
 
 fn email_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<()> {
     for item in try!(index_query(env, query)) {
-        if(item.name.len() > 0 && item.email.len() > 0) {
+        if item.name.len() > 0 && item.email.len() > 0 {
             println!("{} <{}>", item.name, item.email)
         };
     };
