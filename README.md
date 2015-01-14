@@ -31,15 +31,15 @@ Before first usage and after each sync you need to recreate the index with
 ``mates index``.
 
 
-# Integration
+## Integration
 
-## Mutt
+### Mutt
 
     set query_command= "mates mutt-query '%s'"
     bind editor <Tab> complete-query
     bind editor ^T    complete
 
-## Selecta (and similar)
+### Selecta (and similar)
 
 [selecta](https://github.com/garybernhardt/selecta), is a fuzzy text selector
 that can be used instead of grep to search for contacts.
@@ -48,7 +48,7 @@ that can be used instead of grep to search for contacts.
         mutt "$(MATES_GREP=selecta mates email-query)"
     }
 
-## Synchronization with CardDAV (and others)
+### Synchronization with CardDAV (and others)
 
 [Vdirsyncer](http://vdirsyncer.readthedocs.org/) can be used to synchronize to
 a CardDAV server. If you don't need that, using any decent file synchronization
