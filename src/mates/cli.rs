@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::io;
 use std::io::fs::PathExtensions;
 use std::borrow::ToOwned;
+use std::str;
 
 use vobject::parse_component;
 
@@ -19,6 +20,7 @@ macro_rules! main_try {
         }
     )
 }
+
 
 fn get_env() -> HashMap<String, String> {
     let mut env = HashMap::new();
@@ -75,7 +77,7 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
         let emails = item.all_props("EMAIL");
         for email in emails.iter() {
             try!(outf.write_str(
-                format!("{} <{}>\n", name, email.get_raw_value()).as_slice()
+                format!("{}\t{}\t{}\n", email.get_raw_value(), name, entry.display()).as_slice()
             ))
         };
     };
@@ -90,7 +92,7 @@ pub fn cli_main() {
     let opts = [
         optflag("i", "index", "Create index."),
         optflag("h", "help", "Print help."),
-        optopt("m", "mutt-search", "Search in index, for mutt search.", "")
+        optopt("", "mutt-query", "Search in index, for mutt search.", "")
     ];
 
     let matches = main_try!(getopts(args.tail(), &opts), "Failed to parse arguments");
@@ -118,32 +120,91 @@ pub fn cli_main() {
             &Path::new(mates_dir.as_slice())
         ), "Failed to build index");
 
-    } else if matches.opt_present("mutt-search") {
-        let index_file = expect_env(&env, "MATES_INDEX");
-        let default_grep = "grep".to_owned();
-        let grep_cmd = match env.get("MATES_GREP") {
-            Some(x) => x,
-            None => &default_grep
-        };
-
+    } else if matches.opt_present("mutt-query") {
         // FIXME: Better way to write this? We already checked for presence of mutt-search before
-        let query = matches.opt_str("mutt-search").expect("This should never happen and yet it did.");
-        let mut cmd = io::Command::new(grep_cmd.as_slice());
-        cmd.arg(query.as_slice());
-        cmd.arg(index_file.as_slice());
-        cmd.stdout(io::process::InheritFd(1));
-        cmd.stderr(io::process::InheritFd(2));
-
-        let cmd_error = format!("Failed to execute `{}`", cmd);
-        println!("");  // For some reason mutt requires an empty line
-        let mut process = main_try!(cmd.spawn(), cmd_error);
-        let code = main_try!(process.wait(), cmd_error);
-        os::set_exit_status(match code {
-            io::process::ExitStatus(x) => x,
-            io::process::ExitSignal(x) => x,
-        });
-
+        let query = matches.opt_str("mutt-query").expect("This should never happen and yet it did.");
+        main_try!(mutt_query(env, query), "Failed to execute grep");
     } else {
         print_usage();
     };
+}
+
+fn mutt_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<()> {
+    println!("");  // For some reason mutt requires an empty line
+    for item in try!(index_query(env, query)) {
+        if(item.email.len() > 0 && item.name.len() > 0 && item.filepath.len() > 0) {
+            println!("{}\t{}\t{}", item.email, item.name, item.filepath);
+        };
+    };
+    Ok(())
+}
+
+fn index_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<IndexIterator<'a>> {
+    let index_file = expect_env(&env, "MATES_INDEX");
+    let default_grep = "grep".to_owned();
+    let grep_cmd = match env.get("MATES_GREP") {
+        Some(x) => x,
+        None => &default_grep
+    };
+
+    let mut process = try!(io::Command::new(grep_cmd.as_slice())
+                           .arg(query.as_slice())
+                           .arg(index_file.as_slice())
+                           .stderr(io::process::InheritFd(2))
+                           .spawn());
+
+    let stream = match process.stdout.as_mut() {
+        Some(x) => x,
+        None => return Err(io::IoError {
+            kind: io::IoUnavailable,
+            desc: "Failed to get stdout from grep process.",
+            detail: None
+        })
+    };
+
+    let output = try!(stream.read_to_string());
+    Ok(IndexIterator::new(&output))
+}
+
+struct IndexItem<'a> {
+    pub email: String,
+    pub name: String,
+    pub filepath: String
+}
+
+impl<'a> IndexItem<'a> {
+    fn new(line: String) -> IndexItem<'a> {
+        let mut parts = line.split('\t');
+
+        IndexItem {
+            email: parts.next().unwrap_or("").to_string(),
+            name: parts.next().unwrap_or("").to_string(),
+            filepath: parts.next().unwrap_or("").to_string()
+        }
+    }
+}
+
+struct IndexIterator<'a> {
+    linebuffer: Vec<String>
+}
+
+impl<'a> IndexIterator<'a> {
+    fn new(output: &String) -> IndexIterator<'a> {
+
+        let rv = output.split('\n').map(|x: &str| x.to_string()).collect();
+        IndexIterator {
+            linebuffer: rv
+        }
+    }
+}
+
+impl<'a> Iterator for IndexIterator<'a> {
+    type Item = IndexItem<'a>;
+
+    fn next(&mut self) -> Option<IndexItem<'a>> {
+        match self.linebuffer.pop() {
+            Some(x) => Some(IndexItem::new(x)),
+            None => None
+        }
+    }
 }
