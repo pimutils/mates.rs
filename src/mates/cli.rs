@@ -90,9 +90,11 @@ pub fn cli_main() {
 
     let program = args[0].as_slice();
     let opts = [
-        optflag("i", "index", "Create index."),
+        optflag("i", "index", "Rewrite/create index."),
         optflag("h", "help", "Print help."),
-        optopt("", "mutt-query", "Search in index, for mutt search.", "")
+        optopt("", "mutt-query", "Search for contact, for mutt's query_command.", ""),
+        optopt("", "file-query", "Search for contact, return filepaths.", ""),
+        optopt("", "email-query", "Search for contact, return \"name <email>\".", "")
     ];
 
     let matches = main_try!(getopts(args.tail(), &opts), "Failed to parse arguments");
@@ -101,11 +103,6 @@ pub fn cli_main() {
 
     let print_usage = |&:| {
         println!("{}", usage(program, &opts));
-        println!("Environment variables:");
-        println!("- MATES_INDEX: Path to index file, which is basically a cache of all");
-        println!("               contacts.");
-        println!("- MATES_DIR:   The vdir to use.");
-        println!("- MATES_GREP:  The grep executable to use.");
     };
 
     if matches.opt_present("h") {
@@ -124,6 +121,14 @@ pub fn cli_main() {
         // FIXME: Better way to write this? We already checked for presence of mutt-search before
         let query = matches.opt_str("mutt-query").expect("This should never happen and yet it did.");
         main_try!(mutt_query(env, query), "Failed to execute grep");
+    } else if matches.opt_present("file-query") {
+        // FIXME: Better way to write this? We already checked for presence of mutt-search before
+        let query = matches.opt_str("file-query").expect("This should never happen and yet it did.");
+        main_try!(file_query(env, query), "Failed to execute grep");
+    } else if matches.opt_present("email-query") {
+        // FIXME: Better way to write this? We already checked for presence of mutt-search before
+        let query = matches.opt_str("email-query").expect("This should never happen and yet it did.");
+        main_try!(email_query(env, query), "Failed to execute grep");
     } else {
         print_usage();
     };
@@ -132,8 +137,26 @@ pub fn cli_main() {
 fn mutt_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<()> {
     println!("");  // For some reason mutt requires an empty line
     for item in try!(index_query(env, query)) {
-        if(item.email.len() > 0 && item.name.len() > 0 && item.filepath.len() > 0) {
+        if(item.email.len() > 0 && item.name.len() > 0) {
             println!("{}\t{}\t{}", item.email, item.name, item.filepath);
+        };
+    };
+    Ok(())
+}
+
+fn file_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<()> {
+    for item in try!(index_query(env, query)) {
+        if(item.filepath.len() > 0) {
+            println!("{}", item.filepath)
+        };
+    };
+    Ok(())
+}
+
+fn email_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<()> {
+    for item in try!(index_query(env, query)) {
+        if(item.name.len() > 0 && item.email.len() > 0) {
+            println!("{} <{}>", item.name, item.email)
         };
     };
     Ok(())
