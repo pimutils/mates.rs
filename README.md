@@ -1,12 +1,10 @@
 # Mates
 
-A very simple addressbook program to be used together with
-[vdirsyncer](https://github.com/untitaker/vdirsyncer). It was written as an
-experiment to learn Rust, and it might contain hideous code. While it works
-fine for me (and can't do much damage due to its limited featureset), you're
-probably better off using one of the [alternatives listed in vdirsyncer's
-documentation](http://vdirsyncer.readthedocs.org/en/latest/supported.html#client-applications).
-
+A very simple addressbook program. It was written as an experiment to learn
+Rust, and it might contain hideous code. You're probably better off using one
+of the
+[alternatives](http://vdirsyncer.readthedocs.org/en/stable/supported.html#client-applications)
+listed in vdirsyncer's documentation.
 
 ## Installation
 
@@ -20,17 +18,35 @@ Run the binary with ``--help`` to list all environment variables that can be
 used for configuration. ``MATES_INDEX`` and ``MATES_DIR`` must be set.
 
 Before first usage and after each sync you need to recreate the index with
-``mates -i``.
+``mates index``.
 
-Features:
 
-- Configure mutt to use mates:
+# Integration
 
-  ```
-  set query_command= "mates --mutt-search '%s'"
-  bind editor <Tab> complete-query
-  bind editor ^T    complete
-  ```
+## Mutt
+
+```
+set query_command= "mates mutt-query '%s'"
+bind editor <Tab> complete-query
+bind editor ^T    complete
+```
+
+## Selecta
+
+[selecta](https://github.com/garybernhardt/selecta), is a fuzzy text selector
+that can be used instead of grep to search for contacts.
+
+``
+m() {
+    mutt "$(MATES_GREP=selecta mates email-query)"
+}
+``
+
+## Synchronization with CardDAV (and others)
+
+[Vdirsyncer](http://vdirsyncer.readthedocs.org/) can be used to synchronize to
+a CardDAV server. If you don't need that, using any decent file synchronization
+will work too.
 
 ## License
 

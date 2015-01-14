@@ -86,23 +86,29 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
 
 
 pub fn cli_main() {
-    let args = os::args();
-
-    let program = args[0].as_slice();
-    let opts = [
-        optflag("i", "index", "Rewrite/create index."),
-        optflag("h", "help", "Print help."),
-        optopt("", "mutt-query", "Search for contact, for mutt's query_command.", ""),
-        optopt("", "file-query", "Search for contact, return filepaths.", ""),
-        optopt("", "email-query", "Search for contact, return \"name <email>\".", "")
-    ];
-
-    let matches = main_try!(getopts(args.tail(), &opts), "Failed to parse arguments");
-
     let env = get_env();
 
-    let print_usage = |&:| {
-        println!("{}", usage(program, &opts));
+    let mut args = os::args();
+    let program = args.pop().unwrap();
+
+    let help = format!("Usage: {} COMMAND
+Commands:
+    index:
+        Rewrite/create the index.
+    mutt-query <query>:
+        Search for contact, output is usable for mutt's query_command.
+    file-query <query>:
+        Search for contact, return just the filename.
+    email-query <query>:
+        Search for contact, return \"name <email>\".
+    add:
+        Take mail from stdin, add sender to contacts. Print filename.
+    edit <file-or-query>:
+        Open contact (given by filepath or search-string) in $MATES_EDITOR. If
+        the file is cleared, the contact is removed.", program);
+
+    let print_help = |&:| {
+        println!("{}", help);
         println!("Environment variables:");
         println!("- MATES_INDEX: Path to index file, which is basically a cache of all");
         println!("               contacts.");
@@ -110,32 +116,36 @@ pub fn cli_main() {
         println!("- MATES_GREP:  The grep executable to use.");
     };
 
-    if matches.opt_present("h") {
-        print_usage();
+    let command = args.pop().unwrap_or("".to_string());
 
-    } else if matches.opt_present("index") {
-        let index_file = expect_env(&env, "MATES_INDEX");
-        let mates_dir = expect_env(&env, "MATES_DIR");
-        println!("Rebuilding index file \"{}\"...", index_file);
-        main_try!(build_index(
-            &Path::new(index_file.as_slice()),
-            &Path::new(mates_dir.as_slice())
-        ), "Failed to build index");
-
-    } else if matches.opt_present("mutt-query") {
-        // FIXME: Better way to write this? We already checked for presence of mutt-search before
-        let query = matches.opt_str("mutt-query").expect("This should never happen and yet it did.");
-        main_try!(mutt_query(env, query), "Failed to execute grep");
-    } else if matches.opt_present("file-query") {
-        // FIXME: Better way to write this? We already checked for presence of mutt-search before
-        let query = matches.opt_str("file-query").expect("This should never happen and yet it did.");
-        main_try!(file_query(env, query), "Failed to execute grep");
-    } else if matches.opt_present("email-query") {
-        // FIXME: Better way to write this? We already checked for presence of mutt-search before
-        let query = matches.opt_str("email-query").expect("This should never happen and yet it did.");
-        main_try!(email_query(env, query), "Failed to execute grep");
-    } else {
-        print_usage();
+    match command.as_slice() {
+        "index" => {
+            let index_file = expect_env(&env, "MATES_INDEX");
+            let mates_dir = expect_env(&env, "MATES_DIR");
+            println!("Rebuilding index file \"{}\"...", index_file);
+            main_try!(build_index(
+                &Path::new(index_file.as_slice()),
+                &Path::new(mates_dir.as_slice())
+            ), "Failed to build index");
+        },
+        "mutt-query" => {
+            let query = args.pop().unwrap_or("".to_string());
+            main_try!(mutt_query(env, query), "Failed to execute grep");
+        },
+        "file-query" => {
+            let query = args.pop().unwrap_or("".to_string());
+            main_try!(file_query(env, query), "Failed to execute grep");
+        },
+        "email-query" => {
+            let query = args.pop().unwrap_or("".to_string());
+            main_try!(email_query(env, query), "Failed to execute grep");
+        }
+        _ => {
+            print_help();
+            if(command != "help" && command != "--help" && command != "-h") {
+                os::set_exit_status(1);
+            }
+        }
     };
 }
 
