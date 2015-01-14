@@ -13,7 +13,7 @@ source = "git+https://github.com/kevinmehall/rust-peg.git#424081b10e42d09d769657
 [[package]]
 name = "vobject"
 version = "0.0.1"
-source = "git+https://github.com/untitaker/rust-vobject.git#078e5a351fa355f3fab5b2f43e86c2c5e31921f7"
+source = "git+https://github.com/untitaker/rust-vobject.git#83dad0d04a32bf996fd0b828626ef40241ab38b2"
 dependencies = [
  "peg 0.1.3 (git+https://github.com/kevinmehall/rust-peg.git)",
 ]
