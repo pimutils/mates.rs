@@ -87,11 +87,10 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
 
 pub fn cli_main() {
     let env = get_env();
+    let mut args = os::args().into_iter();
+    let program = args.next().unwrap_or("mates".to_string());
 
-    let mut args = os::args();
-    let program = args.pop().unwrap();
-
-    let help = format!("Usage: {} COMMAND
+    let help = "Usage: mates COMMAND
 Commands:
     index:
         Rewrite/create the index.
@@ -105,7 +104,7 @@ Commands:
         Take mail from stdin, add sender to contacts. Print filename.
     edit <file-or-query>:
         Open contact (given by filepath or search-string) in $MATES_EDITOR. If
-        the file is cleared, the contact is removed.", program);
+        the file is cleared, the contact is removed.";
 
     let print_help = |&:| {
         println!("{}", help);
@@ -116,7 +115,7 @@ Commands:
         println!("- MATES_GREP:  The grep executable to use.");
     };
 
-    let command = args.pop().unwrap_or("".to_string());
+    let command = args.next().unwrap_or("".to_string());
 
     match command.as_slice() {
         "index" => {
@@ -129,15 +128,15 @@ Commands:
             ), "Failed to build index");
         },
         "mutt-query" => {
-            let query = args.pop().unwrap_or("".to_string());
+            let query = args.next().unwrap_or("".to_string());
             main_try!(mutt_query(env, query), "Failed to execute grep");
         },
         "file-query" => {
-            let query = args.pop().unwrap_or("".to_string());
+            let query = args.next().unwrap_or("".to_string());
             main_try!(file_query(env, query), "Failed to execute grep");
         },
         "email-query" => {
-            let query = args.pop().unwrap_or("".to_string());
+            let query = args.next().unwrap_or("".to_string());
             main_try!(email_query(env, query), "Failed to execute grep");
         }
         _ => {
@@ -178,18 +177,23 @@ fn email_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<
 }
 
 fn index_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<IndexIterator<'a>> {
-    let index_file = expect_env(&env, "MATES_INDEX");
     let default_grep = "grep".to_owned();
     let grep_cmd = match env.get("MATES_GREP") {
         Some(x) => x,
         None => &default_grep
     };
 
+    let index_path = Path::new(expect_env(&env, "MATES_INDEX"));
     let mut process = try!(io::Command::new(grep_cmd.as_slice())
-                           .arg(query.as_slice())
-                           .arg(index_file.as_slice())
-                           .stderr(io::process::InheritFd(2))
-                           .spawn());
+        .arg(query.as_slice())
+        .stderr(io::process::InheritFd(2))
+        .spawn());
+
+    {
+        let mut index_fp = try!(io::File::open(&index_path));
+        let mut stdin = process.stdin.take().unwrap();
+        try!(stdin.write_str(try!(index_fp.read_to_string()).as_slice()));
+    }
 
     let stream = match process.stdout.as_mut() {
         Some(x) => x,
