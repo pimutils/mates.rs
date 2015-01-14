@@ -103,6 +103,11 @@ pub fn cli_main() {
 
     let print_usage = |&:| {
         println!("{}", usage(program, &opts));
+        println!("Environment variables:");
+        println!("- MATES_INDEX: Path to index file, which is basically a cache of all");
+        println!("               contacts.");
+        println!("- MATES_DIR:   The vdir to use.");
+        println!("- MATES_GREP:  The grep executable to use.");
     };
 
     if matches.opt_present("h") {
