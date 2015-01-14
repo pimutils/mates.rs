@@ -136,7 +136,7 @@ Commands:
         "email-query" => {
             let query = args.next().unwrap_or("".to_string());
             main_try!(email_query(env, query), "Failed to execute grep");
-        }
+        },
         _ => {
             print_help();
             if command != "help" && command != "--help" && command != "-h" {
