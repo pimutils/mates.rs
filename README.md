@@ -41,7 +41,7 @@ Before first usage and after each sync you need to recreate the index with
 
 ### Selecta (and similar)
 
-[selecta](https://github.com/garybernhardt/selecta), is a fuzzy text selector
+[selecta](https://github.com/garybernhardt/selecta) is a fuzzy text selector
 that can be used instead of grep to search for contacts.
 
     m() {
