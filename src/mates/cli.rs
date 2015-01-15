@@ -55,7 +55,7 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
         print!("Processing {}\n", entry.display());
 
         let itemstr = try!(io::File::open(entry).read_to_string());
-        let item = match parse_component(&itemstr) {
+        let item = match parse_component(itemstr.as_slice()) {
             Ok(item) => item,
             Err(e) => {
                 println!("Error: Failed to parse item {}: {}\n", entry.display(), e);
@@ -65,7 +65,7 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
         };
 
         let name = match item.single_prop("FN") {
-            Some(name) => name.get_raw_value(),
+            Some(name) => name.value_as_string(),
             None => {
                 print!("Warning: No name in {}, skipping.\n", entry.display());
                 continue;
@@ -75,7 +75,7 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
         let emails = item.all_props("EMAIL");
         for email in emails.iter() {
             try!(outf.write_str(
-                format!("{}\t{}\t{}\n", email.get_raw_value(), name, entry.display()).as_slice()
+                format!("{}\t{}\t{}\n", email.value_as_string(), name, entry.display()).as_slice()
             ))
         };
     };
