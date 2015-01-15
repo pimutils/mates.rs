@@ -25,7 +25,8 @@ macro_rules! main_try {
 fn get_env() -> HashMap<String, String> {
     let mut env = HashMap::new();
     env.extend(os::env().into_iter().filter(|&(ref key, ref value)| {
-        key.as_slice().starts_with("MATES_") && value.len() > 0
+        (key.as_slice() == "EDITOR" || key.as_slice().starts_with("MATES_")) &&
+            value.len() > 0
     }));
     env
 }
@@ -129,19 +130,25 @@ Commands:
         },
         "mutt-query" => {
             let query = args.next().unwrap_or("".to_string());
-            main_try!(mutt_query(env, query), "Failed to execute grep");
+            main_try!(mutt_query(&env, query.as_slice()), "Failed to execute grep");
         },
         "file-query" => {
             let query = args.next().unwrap_or("".to_string());
-            main_try!(file_query(env, query), "Failed to execute grep");
+            main_try!(file_query(&env, query.as_slice()), "Failed to execute grep");
         },
         "email-query" => {
             let query = args.next().unwrap_or("".to_string());
-            main_try!(email_query(env, query), "Failed to execute grep");
+            main_try!(email_query(&env, query.as_slice()), "Failed to execute grep");
         },
         "add" => {
             let mates_dir = expect_env(&env, "MATES_DIR");
             main_try!(add_contact(mates_dir.as_slice()), "Failed to add contact");
+        },
+        "edit" => {
+            let query = args.next().unwrap_or("".to_string());
+            let mates_dir = expect_env(&env, "MATES_DIR");
+            main_try!(edit_contact(&env, query.as_slice(), mates_dir.as_slice()),
+                      "Failed to edit contact");
         },
         _ => {
             print_help();
@@ -221,13 +228,80 @@ fn read_sender_from_email(email: &str) -> Option<String> {
                     return header.get_value()
                 };
             },
-            None => break
+            None => return None
         };
     };
     None
 }
 
-fn mutt_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<()> {
+fn edit_contact(env: &HashMap<String, String>, query: &str, mates_dir: &str) -> Result<(), String> {
+    let editor_cmd = match env.get("MATES_EDITOR") {
+        Some(x) => x.as_slice(),
+        None => match env.get("EDITOR") {
+            Some(x) => x.as_slice(),
+            None => return Err("Either MATES_EDITOR or EDITOR has to be set.".to_string())
+        }
+    };
+
+    let results = {
+        if Path::new(mates_dir).join(query).exists() {
+            vec![query.to_string()]
+        } else {
+            let results_iter = match index_query(env, query) {
+                Ok(x) => x,
+                Err(e) => return Err(format!("Error while fetching index: {}", e))
+            };
+
+            results_iter.filter_map(|x| {
+                if x.filepath.len() > 0 {
+                    Some(x.filepath)
+                } else {
+                    None
+                }}).collect()
+        }
+    };
+
+    if results.len() < 1 {
+        return Err("No such contact.".to_string());
+    } else if results.len() > 1 {
+        for fname in results.iter() {
+            println!("{}", fname);
+        };
+        return Err("Ambiguous query.".to_string());
+    }
+
+    let fpath = results[0].as_slice();
+    let mut process = match io::Command::new("sh")
+        .arg("-c")
+        // clear stdin, http://unix.stackexchange.com/a/77593
+        .arg(format!("$0 -- \"$1\" < $2"))
+        .arg(editor_cmd.as_slice())
+        .arg(fpath)
+        .arg("/dev/tty")
+        .stdin(io::process::InheritFd(0))
+        .stdout(io::process::InheritFd(1))
+        .stderr(io::process::InheritFd(2))
+        .spawn() {
+            Ok(x) => x,
+            Err(e) => return Err(format!("Error while invoking editor: {}", e))
+        };
+
+    match process.wait() {
+        Ok(_) => (),
+        Err(e) => return Err(format!("Error while invoking editor: {}", e))
+    };
+
+    if match io::File::open(&Path::new(fpath)).read_to_string() {
+        Ok(x) => x,
+        Err(e) => return Err(format!("File can't be read after user edited it: {}", e))
+    }.as_slice().trim().len() == 0 {
+        return Err(format!("Contact emptied, file removed."));
+    };
+
+    Ok(())
+}
+
+fn mutt_query<'a>(env: &HashMap<String, String>, query: &str) -> io::IoResult<()> {
     println!("");  // For some reason mutt requires an empty line
     for item in try!(index_query(env, query)) {
         if item.email.len() > 0 && item.name.len() > 0 {
@@ -237,7 +311,7 @@ fn mutt_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<(
     Ok(())
 }
 
-fn file_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<()> {
+fn file_query<'a>(env: &HashMap<String, String>, query: &str) -> io::IoResult<()> {
     for item in try!(index_query(env, query)) {
         if item.filepath.len() > 0 {
             println!("{}", item.filepath)
@@ -246,23 +320,23 @@ fn file_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<(
     Ok(())
 }
 
-fn email_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<()> {
+fn email_query<'a>(env: &HashMap<String, String>, query: &str) -> io::IoResult<()> {
     for item in try!(index_query(env, query)) {
         if item.name.len() > 0 && item.email.len() > 0 {
-            println!("{} <{}>", item.name, item.email)
+            println!("{} <{}>", item.name, item.email);
         };
     };
     Ok(())
 }
 
-fn index_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<IndexIterator<'a>> {
+fn index_query<'a>(env: &HashMap<String, String>, query: &str) -> io::IoResult<IndexIterator<'a>> {
     let default_grep = "grep".to_owned();
     let grep_cmd = match env.get("MATES_GREP") {
         Some(x) => x,
         None => &default_grep
     };
 
-    let index_path = Path::new(expect_env(&env, "MATES_INDEX"));
+    let index_path = Path::new(expect_env(env, "MATES_INDEX"));
     let mut process = try!(io::Command::new(grep_cmd.as_slice())
         .arg(query.as_slice())
         .stderr(io::process::InheritFd(2))
