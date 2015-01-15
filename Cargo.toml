@@ -12,5 +12,9 @@ name = "mates"
 test = false
 doc = false
 
+[dependencies]
+email = "0.0.7"
+uuid = "*"
+
 [dependencies.vobject]
 git = "https://github.com/untitaker/rust-vobject.git"

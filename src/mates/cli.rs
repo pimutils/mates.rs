@@ -4,7 +4,9 @@ use std::io;
 use std::io::fs::PathExtensions;
 use std::borrow::ToOwned;
 
-use vobject::parse_component;
+use vobject::{Component,Property,parse_component,write_component};
+use email::rfc5322::Rfc5322Parser;
+use uuid::Uuid;
 
 macro_rules! main_try {
     ($result: expr, $errmsg: expr) => (
@@ -137,6 +139,10 @@ Commands:
             let query = args.next().unwrap_or("".to_string());
             main_try!(email_query(env, query), "Failed to execute grep");
         },
+        "add" => {
+            let mates_dir = expect_env(&env, "MATES_DIR");
+            main_try!(add_contact(mates_dir.as_slice()), "Failed to add contact");
+        },
         _ => {
             print_help();
             if command != "help" && command != "--help" && command != "-h" {
@@ -144,6 +150,81 @@ Commands:
             }
         }
     };
+}
+
+fn add_contact(contact_dir: &str) -> io::IoResult<()> {
+    let stdin = try!(io::stdin().lock().read_to_string());
+    let from_header = match read_sender_from_email(stdin.as_slice()) {
+        Some(x) => x,
+        None => return Err(io::IoError {
+            kind: io::InvalidInput,
+            desc: "Couldn't find From-header in email.",
+            detail: None
+        })
+    };
+    let (fullname, email) = parse_from_header(&from_header);
+
+    let (uid, contact_path) = {
+        let mut uid;
+        let mut contact_path;
+        loop {
+            uid = Uuid::new_v4().to_simple_string();
+            contact_path = Path::new(contact_dir).join(Path::new(format!("{}.vcf", uid)));
+            if !contact_path.exists() {
+                break
+            }
+        };
+        (uid, contact_path)
+    };
+    let contact = generate_contact(uid, fullname, email);
+    let contact_string = write_component(&contact);
+    let mut fp = try!(io::File::create(&contact_path));
+    try!(fp.write_str(contact_string.as_slice()));
+    println!("{}", contact_path.display());
+    Ok(())
+}
+
+fn generate_contact(uid: String, fullname: Option<&str>, email: Option<&str>) -> Component {
+    let mut contact = Component::new("VCARD".to_string());
+
+    match fullname {
+        Some(x) => contact.all_props_mut("FN").push(Property::new_from_string(x)),
+        None => ()
+    };
+
+    match email {
+        Some(x) => contact.all_props_mut("EMAIL").push(Property::new_from_string(x)),
+        None => ()
+    };
+    contact.all_props_mut("UID").push(Property::new_from_string(uid.as_slice()));
+    contact
+}
+
+/// Return a tuple (fullname, email)
+fn parse_from_header<'a>(s: &'a String) -> (Option<&'a str>, Option<&'a str>) {
+    let mut split = s.rsplitn(1, ' ');
+    let email = match split.next() {
+        Some(x) => Some(x.trim_left_matches('<').trim_right_matches('>')),
+        None => Some(s.as_slice())
+    };
+    let name = split.next();
+    (name, email)
+}
+
+/// Given an email, return value of From header.
+fn read_sender_from_email(email: &str) -> Option<String> {
+    let mut parser = Rfc5322Parser::new(email);
+    while !parser.eof() {
+        match parser.consume_header() {
+            Some(header) => {
+                if header.name == "From" {
+                    return header.get_value()
+                };
+            },
+            None => break
+        };
+    };
+    None
 }
 
 fn mutt_query<'a>(env: HashMap<String, String>, query: String) -> io::IoResult<()> {
