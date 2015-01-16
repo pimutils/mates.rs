@@ -50,39 +50,63 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
 
     let mut outf = io::File::create(outfile);
     let entries = try!(io::fs::readdir(dir));
+    let mut errors = false;
+
     for entry in entries.iter() {
         if !entry.is_file() {
             continue;
         }
 
-        print!("Processing {}\n", entry.display());
-
-        let itemstr = try!(io::File::open(entry).read_to_string());
-        let item = match parse_component(itemstr.as_slice()) {
-            Ok(item) => item,
+        println!("Processing {}", entry.display());
+        let contact = match Contact::from_file(entry.clone()) {
+            Ok(x) => x,
             Err(e) => {
-                println!("Error: Failed to parse item {}: {}\n", entry.display(), e);
-                os::set_exit_status(1);
-                continue;
+                println!("Error while reading {}: {}", entry.display(), e);
+                errors = true;
+                continue
             }
         };
 
-        let name = match item.single_prop("FN") {
-            Some(name) => name.value_as_string(),
-            None => {
-                print!("Warning: No name in {}, skipping.\n", entry.display());
-                continue;
+        match index_item_from_contact(&contact) {
+            Ok(index_string) => {
+                try!(outf.write_str(index_string.as_slice()));
+            },
+            Err(e) => {
+                println!("Error while indexing {}: {}", entry.display(), e);
+                errors = true;
+                continue
             }
-        };
-
-        let emails = item.all_props("EMAIL");
-        for email in emails.iter() {
-            try!(outf.write_str(
-                format!("{}\t{}\t{}\n", email.value_as_string(), name, entry.display()).as_slice()
-            ))
         };
     };
-    return Ok(());
+
+    if errors {
+        Err(io::IoError {
+            kind: io::OtherIoError,
+            desc: "Several errors happened while generating the index.",
+            detail: None
+        })
+    } else {
+        Ok(())
+    }
+}
+
+
+fn index_item_from_contact(contact: &Contact) -> io::IoResult<String> {
+    let name = match contact.component.single_prop("FN") {
+        Some(name) => name.value_as_string(),
+        None => return Err(io::IoError {
+            kind: io::OtherIoError,
+            desc: "No name found.",
+            detail: None
+        })
+    };
+
+    let emails = contact.component.all_props("EMAIL");
+    let mut rv = String::new();
+    for email in emails.iter() {
+        rv.push_str(format!("{}\t{}\t{}\n", email.value_as_string(), name, contact.path.display()).as_slice());
+    };
+    Ok(rv)
 }
 
 
@@ -136,8 +160,20 @@ Commands:
             main_try!(email_query(&env, query.as_slice()), "Failed to execute grep");
         },
         "add" => {
+            let index_file = expect_env(&env, "MATES_INDEX");
             let mates_dir = expect_env(&env, "MATES_DIR");
-            main_try!(add_contact(mates_dir.as_slice()), "Failed to add contact");
+            let contact = main_try!(add_contact(mates_dir.as_slice()), "Failed to add contact");
+            println!("{}", contact.path.display());
+
+            let mut index_file = main_try!(io::File::open_mode(
+                &Path::new(index_file),
+                io::Append,
+                io::Write),
+                "Failed to open index"
+            );
+
+            let index_entry = main_try!(index_item_from_contact(&contact), "Failed to generate index");
+            main_try!(index_file.write_str(index_entry.as_slice()), "Failed to write to index");
         },
         "edit" => {
             let query = args.next().unwrap_or("".to_string());
@@ -154,7 +190,7 @@ Commands:
     };
 }
 
-fn add_contact(contact_dir: &str) -> io::IoResult<()> {
+fn add_contact(contact_dir: &str) -> io::IoResult<Contact> {
     let stdin = try!(io::stdin().lock().read_to_string());
     let from_header = match read_sender_from_email(stdin.as_slice()) {
         Some(x) => x,
@@ -178,28 +214,28 @@ fn add_contact(contact_dir: &str) -> io::IoResult<()> {
         };
         (uid, contact_path)
     };
-    let contact = generate_contact(uid, fullname, email);
-    let contact_string = write_component(&contact);
+    let component = generate_component(uid, fullname, email);
+    let component_string = write_component(&component);
     let mut fp = try!(io::File::create(&contact_path));
-    try!(fp.write_str(contact_string.as_slice()));
-    println!("{}", contact_path.display());
-    Ok(())
+    try!(fp.write_str(component_string.as_slice()));
+
+    Ok(Contact { component: component, path: contact_path })
 }
 
-fn generate_contact(uid: String, fullname: Option<&str>, email: Option<&str>) -> Component {
-    let mut contact = Component::new("VCARD".to_string());
+fn generate_component(uid: String, fullname: Option<&str>, email: Option<&str>) -> Component {
+    let mut comp = Component::new("VCARD".to_string());
 
     match fullname {
-        Some(x) => contact.all_props_mut("FN").push(Property::new(x)),
+        Some(x) => comp.all_props_mut("FN").push(Property::new(x)),
         None => ()
     };
 
     match email {
-        Some(x) => contact.all_props_mut("EMAIL").push(Property::new(x)),
+        Some(x) => comp.all_props_mut("EMAIL").push(Property::new(x)),
         None => ()
     };
-    contact.all_props_mut("UID").push(Property::new(uid.as_slice()));
-    contact
+    comp.all_props_mut("UID").push(Property::new(uid.as_slice()));
+    comp
 }
 
 /// Return a tuple (fullname, email)
@@ -396,5 +432,26 @@ impl<'a> Iterator for IndexIterator<'a> {
             Some(x) => Some(IndexItem::new(x)),
             None => None
         }
+    }
+}
+
+struct Contact {
+    pub component: Component,
+    pub path: Path
+}
+
+impl Contact {
+    pub fn from_file(path: Path) -> io::IoResult<Contact> {
+        let mut contact_file = try!(io::File::open(&path));
+        let contact_string = try!(contact_file.read_to_string());
+        let item = match parse_component(contact_string.as_slice()) {
+            Ok(x) => x,
+            Err(e) => return Err(io::IoError {
+                kind: io::OtherIoError,
+                desc: "Error while parsing contact",
+                detail: Some(e)
+            })
+        };
+        Ok(Contact { component: item, path: path })
     }
 }
