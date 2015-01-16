@@ -109,11 +109,6 @@ Commands:
 
     let print_help = |&:| {
         println!("{}", help);
-        println!("Environment variables:");
-        println!("- MATES_INDEX: Path to index file, which is basically a cache of all");
-        println!("               contacts.");
-        println!("- MATES_DIR:   The vdir to use.");
-        println!("- MATES_GREP:  The grep executable to use.");
     };
 
     let command = args.next().unwrap_or("".to_string());
