@@ -449,7 +449,7 @@ impl Contact {
 
 
 fn generate_component(uid: String, fullname: Option<&str>, email: Option<&str>) -> Component {
-    let mut comp = Component::new("VCARD".to_string());
+    let mut comp = Component::new("VCARD");
 
     match fullname {
         Some(x) => comp.all_props_mut("FN").push(Property::new(x)),
