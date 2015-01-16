@@ -215,11 +215,9 @@ fn add_contact(contact_dir: &str) -> io::IoResult<Contact> {
         (uid, contact_path)
     };
     let component = generate_component(uid, fullname, email);
-    let component_string = write_component(&component);
-    let mut fp = try!(io::File::create(&contact_path));
-    try!(fp.write_str(component_string.as_slice()));
-
-    Ok(Contact { component: component, path: contact_path })
+    let contact = Contact { component: component, path: contact_path };
+    try!(contact.write_create());
+    Ok(contact)
 }
 
 fn generate_component(uid: String, fullname: Option<&str>, email: Option<&str>) -> Component {
@@ -453,5 +451,11 @@ impl Contact {
             })
         };
         Ok(Contact { component: item, path: path })
+    }
+
+    pub fn write_create(&self) -> io::IoResult<()> {
+        let string = write_component(&self.component);
+        let mut fp = try!(io::File::create(&self.path));
+        fp.write_str(string.as_slice())
     }
 }
