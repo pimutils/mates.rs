@@ -160,20 +160,20 @@ Commands:
             main_try!(email_query(&env, query.as_slice()), "Failed to execute grep");
         },
         "add" => {
-            let index_file = expect_env(&env, "MATES_INDEX");
-            let mates_dir = expect_env(&env, "MATES_DIR");
-            let contact = main_try!(add_contact(mates_dir.as_slice()), "Failed to add contact");
+            let index_file = Path::new(expect_env(&env, "MATES_INDEX"));
+            let mates_dir = Path::new(expect_env(&env, "MATES_DIR"));
+            let contact = main_try!(add_contact(&mates_dir), "Failed to add contact");
             println!("{}", contact.path.display());
 
-            let mut index_file = main_try!(io::File::open_mode(
-                &Path::new(index_file),
+            let mut index_fp = main_try!(io::File::open_mode(
+                &index_file,
                 io::Append,
                 io::Write),
                 "Failed to open index"
             );
 
             let index_entry = main_try!(index_item_from_contact(&contact), "Failed to generate index");
-            main_try!(index_file.write_str(index_entry.as_slice()), "Failed to write to index");
+            main_try!(index_fp.write_str(index_entry.as_slice()), "Failed to write to index");
         },
         "edit" => {
             let query = args.next().unwrap_or("".to_string());
@@ -190,7 +190,7 @@ Commands:
     };
 }
 
-fn add_contact(contact_dir: &str) -> io::IoResult<Contact> {
+fn add_contact(contact_dir: &Path) -> io::IoResult<Contact> {
     let stdin = try!(io::stdin().lock().read_to_string());
     let from_header = match read_sender_from_email(stdin.as_slice()) {
         Some(x) => x,
@@ -201,40 +201,11 @@ fn add_contact(contact_dir: &str) -> io::IoResult<Contact> {
         })
     };
     let (fullname, email) = parse_from_header(&from_header);
-
-    let (uid, contact_path) = {
-        let mut uid;
-        let mut contact_path;
-        loop {
-            uid = Uuid::new_v4().to_simple_string();
-            contact_path = Path::new(contact_dir).join(Path::new(format!("{}.vcf", uid)));
-            if !contact_path.exists() {
-                break
-            }
-        };
-        (uid, contact_path)
-    };
-    let component = generate_component(uid, fullname, email);
-    let contact = Contact { component: component, path: contact_path };
+    let contact = Contact::generate(fullname, email, contact_dir);
     try!(contact.write_create());
     Ok(contact)
 }
 
-fn generate_component(uid: String, fullname: Option<&str>, email: Option<&str>) -> Component {
-    let mut comp = Component::new("VCARD".to_string());
-
-    match fullname {
-        Some(x) => comp.all_props_mut("FN").push(Property::new(x)),
-        None => ()
-    };
-
-    match email {
-        Some(x) => comp.all_props_mut("EMAIL").push(Property::new(x)),
-        None => ()
-    };
-    comp.all_props_mut("UID").push(Property::new(uid.as_slice()));
-    comp
-}
 
 /// Return a tuple (fullname, email)
 fn parse_from_header<'a>(s: &'a String) -> (Option<&'a str>, Option<&'a str>) {
@@ -453,9 +424,42 @@ impl Contact {
         Ok(Contact { component: item, path: path })
     }
 
+    pub fn generate(fullname: Option<&str>, email: Option<&str>, dir: &Path) -> Contact {
+        let (uid, contact_path) = {
+            let mut uid;
+            let mut contact_path;
+            loop {
+                uid = Uuid::new_v4().to_simple_string();
+                contact_path = dir.join(Path::new(format!("{}.vcf", uid)));
+                if !contact_path.exists() {
+                    break
+                }
+            };
+            (uid, contact_path)
+        };
+        Contact { path: contact_path, component: generate_component(uid, fullname, email) }
+    }
+
     pub fn write_create(&self) -> io::IoResult<()> {
         let string = write_component(&self.component);
         let mut fp = try!(io::File::create(&self.path));
         fp.write_str(string.as_slice())
     }
+}
+
+
+fn generate_component(uid: String, fullname: Option<&str>, email: Option<&str>) -> Component {
+    let mut comp = Component::new("VCARD".to_string());
+
+    match fullname {
+        Some(x) => comp.all_props_mut("FN").push(Property::new(x)),
+        None => ()
+    };
+
+    match email {
+        Some(x) => comp.all_props_mut("EMAIL").push(Property::new(x)),
+        None => ()
+    };
+    comp.all_props_mut("UID").push(Property::new(uid.as_slice()));
+    comp
 }
