@@ -26,6 +26,7 @@ used for configuration. ``MATES_INDEX`` and ``MATES_DIR`` must be set.
 The other environment variables are:
 
 - ``MATES_GREP``, override the grep binary to use. Default to ``grep``.
+- ``MATES_EDITOR``, override the vCard editor to use. Default to ``EDITOR``.
 
 Before first usage and after each sync you need to recreate the index with
 ``mates index``.
