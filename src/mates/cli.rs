@@ -57,7 +57,6 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
             continue;
         }
 
-        println!("Processing {}", entry.display());
         let contact = match Contact::from_file(entry.clone()) {
             Ok(x) => x,
             Err(e) => {
