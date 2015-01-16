@@ -38,8 +38,7 @@ Before first usage and after each sync you need to recreate the index with
     set query_command= "mates mutt-query '%s'"
     bind editor <Tab> complete-query
     bind editor ^T    complete
-    # unix2dos is necessary for emails with broken linebreaks
-    macro index,pager A "<pipe-message>unix2dos | mates add | xargs mates edit<enter>" "add the sender address"
+    macro index,pager A "<pipe-message>mates add | xargs mates edit<enter>" "add the sender address"
 
 ### Selecta (and similar)
 
