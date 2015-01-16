@@ -22,8 +22,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "chrono 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "encoding 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
- "lazy_static 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -91,7 +91,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "lazy_static"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -101,7 +101,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "rustc-serialize"
-version = "0.2.7"
+version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -117,13 +117,13 @@ name = "uuid"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "rustc-serialize 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "vobject"
 version = "0.0.1"
-source = "git+https://github.com/untitaker/rust-vobject.git#ba69eb249e211ca87e063f652f47d8ea3625734a"
+source = "git+https://github.com/untitaker/rust-vobject.git#a45dcb737fb60c66b09843b12644389f9f569da8"
 dependencies = [
  "peg 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

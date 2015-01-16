@@ -195,15 +195,15 @@ fn generate_contact(uid: String, fullname: Option<&str>, email: Option<&str>) ->
     let mut contact = Component::new("VCARD".to_string());
 
     match fullname {
-        Some(x) => contact.all_props_mut("FN").push(Property::new_from_string(x)),
+        Some(x) => contact.all_props_mut("FN").push(Property::new(x)),
         None => ()
     };
 
     match email {
-        Some(x) => contact.all_props_mut("EMAIL").push(Property::new_from_string(x)),
+        Some(x) => contact.all_props_mut("EMAIL").push(Property::new(x)),
         None => ()
     };
-    contact.all_props_mut("UID").push(Property::new_from_string(uid.as_slice()));
+    contact.all_props_mut("UID").push(Property::new(uid.as_slice()));
     contact
 }
 
