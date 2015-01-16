@@ -2,7 +2,7 @@
 name = "mates"
 version = "0.0.1"
 dependencies = [
- "email 0.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "email 0.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "uuid 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "vobject 0.0.1 (git+https://github.com/untitaker/rust-vobject.git)",
 ]
@@ -17,7 +17,7 @@ dependencies = [
 
 [[package]]
 name = "email"
-version = "0.0.7"
+version = "0.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "chrono 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)",
