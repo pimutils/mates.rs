@@ -28,8 +28,9 @@ The other environment variables are:
 - ``MATES_GREP``, override the grep binary to use. Default to ``grep``.
 - ``MATES_EDITOR``, override the vCard editor to use. Default to ``EDITOR``.
 
-Before first usage and after each sync you need to recreate the index with
-``mates index``.
+``mates index`` must be called periodically. Even when using mates' own
+commands, the index will be not updated automatically, as this would impact UI
+responsiveness massively.
 
 
 ## Integration
