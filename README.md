@@ -9,8 +9,14 @@ listed in vdirsyncer's documentation.
 
 ## Installation
 
-You need to have Rust nightly and Cargo installed. Just run ``cargo build`` to
-get a binary which only depends on a working ``grep`` command in your path.
+You need to have Rust nightly and Cargo installed.
+
+1. Clone this repository, `cd` to it.
+2. Run `cargo build --release`. You could omit the release-flag, but then mates
+   would run awfully slow.
+3. The resulting binary is in `./target/release/` (`./target/` if you built
+   without the release-flag), and depends on a Rust installation on your
+   system, and `grep` in your `PATH`.
 
 
 ## Usage
