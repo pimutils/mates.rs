@@ -15,8 +15,8 @@ You need to have Rust nightly and Cargo installed.
 2. Run `cargo build --release`. You could omit the release-flag, but then mates
    would run awfully slow.
 3. The resulting binary is in `./target/release/` (`./target/` if you built
-   without the release-flag), and depends on a Rust installation on your
-   system, and `grep` in your `PATH`.
+   without the release-flag), and depends on `glibc`, and `grep` in your
+   `PATH`.
 
 
 ## Usage

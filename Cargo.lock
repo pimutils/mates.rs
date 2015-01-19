@@ -123,7 +123,7 @@ dependencies = [
 [[package]]
 name = "vobject"
 version = "0.0.1"
-source = "git+https://github.com/untitaker/rust-vobject.git#029a4771250db5afcdb778a4690ce6a9cfb79fc0"
+source = "git+https://github.com/untitaker/rust-vobject.git#1a62e46e831c4a1771cdeabc6d0dd4aa4c6702bb"
 dependencies = [
  "peg 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
