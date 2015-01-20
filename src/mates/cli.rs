@@ -268,7 +268,7 @@ fn read_sender_from_email(email: &str) -> Option<String> {
 fn edit_contact(config: &Configuration, query: &str) -> Result<(), String> {
 
     let results = {
-        if config.vdir_path.join(query).exists() {
+        if config.vdir_path.join(query).is_file() {
             vec![query.to_string()]
         } else {
             let results_iter = match index_query(config, query) {
@@ -288,9 +288,6 @@ fn edit_contact(config: &Configuration, query: &str) -> Result<(), String> {
     if results.len() < 1 {
         return Err("No such contact.".to_string());
     } else if results.len() > 1 {
-        for fname in results.iter() {
-            println!("{}", fname);
-        };
         return Err("Ambiguous query.".to_string());
     }
 
