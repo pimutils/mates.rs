@@ -30,17 +30,14 @@ AUR](https://aur.archlinux.org/packages/rust-nightly-bin/).
 ## Usage
 
 Run the binary with ``--help`` to list all environment variables that can be
-used for configuration. ``MATES_INDEX`` and ``MATES_DIR`` must be set.
-
-- Set ``MATES_INDEX`` to a location where the program can generate an index
-  file for performance purposes.
-
-- Set ``MATES_DIR`` to your directory of ``.vcf``-files.
+used for configuration. Then set the environment variable ``MATES_DIR`` to your
+directory of ``.vcf``-files.
 
 The other environment variables are:
 
-- ``MATES_GREP``, override the grep binary to use. Default to ``grep``.
 - ``MATES_EDITOR``, override the vCard editor to use. Default to ``EDITOR``.
+- ``MATES_GREP``, override the grep binary to use. Default to ``grep``.
+- ``MATES_INDEX``, the filepath to the contact index. Default to ``~/.mates_index``.
 
 **Note: ``mates index`` must be called periodically.** Even when using mates'
 own commands, the index will be not updated automatically, as this would impact

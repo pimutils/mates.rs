@@ -35,7 +35,12 @@ impl Configuration {
         Ok(Configuration {
             index_path: match dict.remove("MATES_INDEX") {
                 Some(x) => Path::new(x),
-                None => os::make_absolute(&Path::new("~/.mates_index")).unwrap()
+                None => match dict.get("HOME") {
+                    Some(home) => {
+                        os::make_absolute(&Path::new(home).join(".mates_index")).unwrap()
+                    },
+                    None => return Err("Unable to determine user's home directory.".to_owned())
+                }
             },
             vdir_path: match dict.remove("MATES_DIR") {
                 Some(x) => Path::new(x),
