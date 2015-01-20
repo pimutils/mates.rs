@@ -21,21 +21,43 @@ macro_rules! main_try {
     )
 }
 
-
-fn get_env() -> HashMap<String, String> {
-    let mut env = HashMap::new();
-    env.extend(os::env().into_iter().filter(|&(ref key, ref value)| {
-        (key.as_slice() == "EDITOR" || key.as_slice().starts_with("MATES_")) &&
-            value.len() > 0
-    }));
-    env
+struct Configuration {
+    index_path: Path,
+    vdir_path: Path,
+    editor_cmd: String,
+    grep_cmd: String
 }
 
+impl Configuration {
+    fn from_env(env: Vec<(String, String)>) -> Result<Configuration, String> {
+        let mut dict = HashMap::new();
+        dict.extend(env.into_iter().filter(|&(_, ref v)| v.len() > 0));
+        Ok(Configuration {
+            index_path: match dict.remove("MATES_INDEX") {
+                Some(x) => Path::new(x),
+                None => os::make_absolute(&Path::new("~/.mates_index")).unwrap()
+            },
+            vdir_path: match dict.remove("MATES_DIR") {
+                Some(x) => Path::new(x),
+                None => return Err("MATES_DIR must be set to your vdir path (directory of vcf-files).".to_owned())
+            },
+            editor_cmd: match dict.remove("MATES_EDITOR") {
+                Some(x) => x,
+                None => match dict.remove("EDITOR") {
+                    Some(x) => x,
+                    None => return Err("MATES_EDITOR or EDITOR must be set.".to_owned())
+                }
+            },
+            grep_cmd: match dict.remove("MATES_GREP") {
+                Some(x) => x,
+                None => "grep".to_owned()
+            }
+        })
+    }
 
-fn expect_env<'a>(env: &'a HashMap<String, String>, key: &str) -> &'a String {
-    env.get(key).expect(
-        format!("The {} environment variable must be set.", key).as_slice()
-    )
+    fn new() -> Result<Configuration, String> {
+        Configuration::from_env(os::env())
+    }
 }
 
 
@@ -110,7 +132,6 @@ fn index_item_from_contact(contact: &Contact) -> io::IoResult<String> {
 
 
 pub fn cli_main() {
-    let env = get_env();
     let mut args = os::args().into_iter();
     let program = args.next().unwrap_or("mates".to_string());
 
@@ -134,38 +155,52 @@ Commands:
         println!("{}", help);
     };
 
-    let command = args.next().unwrap_or("".to_string());
+    let command = match args.next() {
+        Some(x) => x,
+        None => {
+            print_help();
+            os::set_exit_status(1);
+            return;
+        }
+    };
+
+    if command == "--help" || command == "help" || command == "-h" {
+        print_help();
+        return;
+    }
+
+    let config = match Configuration::new() {
+        Ok(x) => x,
+        Err(e) => {
+            println!("Error while reading configuration: {}", e);
+            os::set_exit_status(1);
+            return;
+        }
+    };
 
     match command.as_slice() {
         "index" => {
-            let index_file = expect_env(&env, "MATES_INDEX");
-            let mates_dir = expect_env(&env, "MATES_DIR");
-            println!("Rebuilding index file \"{}\"...", index_file);
-            main_try!(build_index(
-                &Path::new(index_file.as_slice()),
-                &Path::new(mates_dir.as_slice())
-            ), "Failed to build index");
+            println!("Rebuilding index file \"{}\"...", config.index_path.display());
+            main_try!(build_index(&config.index_path, &config.vdir_path), "Failed to build index");
         },
         "mutt-query" => {
             let query = args.next().unwrap_or("".to_string());
-            main_try!(mutt_query(&env, query.as_slice()), "Failed to execute grep");
+            main_try!(mutt_query(&config, query.as_slice()), "Failed to execute grep");
         },
         "file-query" => {
             let query = args.next().unwrap_or("".to_string());
-            main_try!(file_query(&env, query.as_slice()), "Failed to execute grep");
+            main_try!(file_query(&config, query.as_slice()), "Failed to execute grep");
         },
         "email-query" => {
             let query = args.next().unwrap_or("".to_string());
-            main_try!(email_query(&env, query.as_slice()), "Failed to execute grep");
+            main_try!(email_query(&config, query.as_slice()), "Failed to execute grep");
         },
         "add" => {
-            let index_file = Path::new(expect_env(&env, "MATES_INDEX"));
-            let mates_dir = Path::new(expect_env(&env, "MATES_DIR"));
-            let contact = main_try!(add_contact(&mates_dir), "Failed to add contact");
+            let contact = main_try!(add_contact(&config.vdir_path), "Failed to add contact");
             println!("{}", contact.path.display());
 
             let mut index_fp = main_try!(io::File::open_mode(
-                &index_file,
+                &config.index_path,
                 io::Append,
                 io::Write),
                 "Failed to open index"
@@ -176,15 +211,12 @@ Commands:
         },
         "edit" => {
             let query = args.next().unwrap_or("".to_string());
-            let mates_dir = expect_env(&env, "MATES_DIR");
-            main_try!(edit_contact(&env, query.as_slice(), mates_dir.as_slice()),
-                      "Failed to edit contact");
+            main_try!(edit_contact(&config, query.as_slice()), "Failed to edit contact");
         },
         _ => {
+            println!("Invalid command: {}", command);
             print_help();
-            if command != "help" && command != "--help" && command != "-h" {
-                os::set_exit_status(1);
-            }
+            os::set_exit_status(1);
         }
     };
 }
@@ -233,20 +265,13 @@ fn read_sender_from_email(email: &str) -> Option<String> {
     None
 }
 
-fn edit_contact(env: &HashMap<String, String>, query: &str, mates_dir: &str) -> Result<(), String> {
-    let editor_cmd = match env.get("MATES_EDITOR") {
-        Some(x) => x.as_slice(),
-        None => match env.get("EDITOR") {
-            Some(x) => x.as_slice(),
-            None => return Err("Either MATES_EDITOR or EDITOR has to be set.".to_string())
-        }
-    };
+fn edit_contact(config: &Configuration, query: &str) -> Result<(), String> {
 
     let results = {
-        if Path::new(mates_dir).join(query).exists() {
+        if config.vdir_path.join(query).exists() {
             vec![query.to_string()]
         } else {
-            let results_iter = match index_query(env, query) {
+            let results_iter = match index_query(config, query) {
                 Ok(x) => x,
                 Err(e) => return Err(format!("Error while fetching index: {}", e))
             };
@@ -274,7 +299,7 @@ fn edit_contact(env: &HashMap<String, String>, query: &str, mates_dir: &str) -> 
         .arg("-c")
         // clear stdin, http://unix.stackexchange.com/a/77593
         .arg(format!("$0 -- \"$1\" < $2"))
-        .arg(editor_cmd.as_slice())
+        .arg(config.editor_cmd.as_slice())
         .arg(fpath)
         .arg("/dev/tty")
         .stdin(io::process::InheritFd(0))
@@ -300,9 +325,9 @@ fn edit_contact(env: &HashMap<String, String>, query: &str, mates_dir: &str) -> 
     Ok(())
 }
 
-fn mutt_query<'a>(env: &HashMap<String, String>, query: &str) -> io::IoResult<()> {
+fn mutt_query<'a>(config: &Configuration, query: &str) -> io::IoResult<()> {
     println!("");  // For some reason mutt requires an empty line
-    for item in try!(index_query(env, query)) {
+    for item in try!(index_query(config, query)) {
         if item.email.len() > 0 && item.name.len() > 0 {
             println!("{}\t{}\t{}", item.email, item.name, item.filepath);
         };
@@ -310,8 +335,8 @@ fn mutt_query<'a>(env: &HashMap<String, String>, query: &str) -> io::IoResult<()
     Ok(())
 }
 
-fn file_query<'a>(env: &HashMap<String, String>, query: &str) -> io::IoResult<()> {
-    for item in try!(index_query(env, query)) {
+fn file_query<'a>(config: &Configuration, query: &str) -> io::IoResult<()> {
+    for item in try!(index_query(config, query)) {
         if item.filepath.len() > 0 {
             println!("{}", item.filepath)
         };
@@ -319,8 +344,8 @@ fn file_query<'a>(env: &HashMap<String, String>, query: &str) -> io::IoResult<()
     Ok(())
 }
 
-fn email_query<'a>(env: &HashMap<String, String>, query: &str) -> io::IoResult<()> {
-    for item in try!(index_query(env, query)) {
+fn email_query<'a>(config: &Configuration, query: &str) -> io::IoResult<()> {
+    for item in try!(index_query(config, query)) {
         if item.name.len() > 0 && item.email.len() > 0 {
             println!("{} <{}>", item.name, item.email);
         };
@@ -328,21 +353,14 @@ fn email_query<'a>(env: &HashMap<String, String>, query: &str) -> io::IoResult<(
     Ok(())
 }
 
-fn index_query<'a>(env: &HashMap<String, String>, query: &str) -> io::IoResult<IndexIterator<'a>> {
-    let default_grep = "grep".to_owned();
-    let grep_cmd = match env.get("MATES_GREP") {
-        Some(x) => x,
-        None => &default_grep
-    };
-
-    let index_path = Path::new(expect_env(env, "MATES_INDEX"));
-    let mut process = try!(io::Command::new(grep_cmd.as_slice())
+fn index_query<'a>(config: &Configuration, query: &str) -> io::IoResult<IndexIterator<'a>> {
+    let mut process = try!(io::Command::new(config.grep_cmd.as_slice())
         .arg(query.as_slice())
         .stderr(io::process::InheritFd(2))
         .spawn());
 
     {
-        let mut index_fp = try!(io::File::open(&index_path));
+        let mut index_fp = try!(io::File::open(&config.index_path));
         let mut stdin = process.stdin.take().unwrap();
         try!(stdin.write_str(try!(index_fp.read_to_string()).as_slice()));
     }
