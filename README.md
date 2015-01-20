@@ -1,7 +1,7 @@
 # Mates
 
-A commandline addressbook, operating on a directory of ``.vcf`` files,
-see [vdir](http://vdirsyncer.readthedocs.org/en/stable/vdir.html).
+A commandline addressbook, operating on a directory of ``.vcf`` files, see
+[vdir](http://vdirsyncer.readthedocs.org/en/stable/vdir.html).
 
 The main focus is on performance when searching contacts. Mates maintains a
 simple textfile with only a few properties, on which it calls `grep`.
@@ -15,7 +15,9 @@ should work well though.
 
 ## Installation
 
-You need to have Rust nightly and Cargo installed.
+You need to have Rust nightly and Cargo installed. On ArchLinux, the easiest
+way to obtain these is to install [`rust-nightly-bin` from the
+AUR](https://aur.archlinux.org/packages/rust-nightly-bin/).
 
 1. Clone this repository, `cd` to it.
 2. Run `cargo build --release`. You could omit the release-flag, but then mates
