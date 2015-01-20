@@ -7,6 +7,7 @@ use std::borrow::ToOwned;
 use vobject::{Component,Property,parse_component,write_component};
 use email::rfc5322::Rfc5322Parser;
 use uuid::Uuid;
+use atomicwrites::{AtomicFile,AllowOverwrite,DisallowOverwrite};
 
 macro_rules! main_try {
     ($result: expr, $errmsg: expr) => (
@@ -75,35 +76,38 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
         });
     };
 
-    let mut outf = io::File::create(outfile);
+    let af = AtomicFile::new(outfile, AllowOverwrite, None);
     let entries = try!(io::fs::readdir(dir));
     let mut errors = false;
 
-    for entry in entries.iter() {
-        if !entry.is_file() {
-            continue;
-        }
-
-        let contact = match Contact::from_file(entry.clone()) {
-            Ok(x) => x,
-            Err(e) => {
-                println!("Error while reading {}: {}", entry.display(), e);
-                errors = true;
-                continue
+    try!(af.write(|&mut: outf| {
+        for entry in entries.iter() {
+            if !entry.is_file() {
+                continue;
             }
-        };
 
-        match index_item_from_contact(&contact) {
-            Ok(index_string) => {
-                try!(outf.write_str(index_string.as_slice()));
-            },
-            Err(e) => {
-                println!("Error while indexing {}: {}", entry.display(), e);
-                errors = true;
-                continue
-            }
+            let contact = match Contact::from_file(entry.clone()) {
+                Ok(x) => x,
+                Err(e) => {
+                    println!("Error while reading {}: {}", entry.display(), e);
+                    errors = true;
+                    continue
+                }
+            };
+
+            match index_item_from_contact(&contact) {
+                Ok(index_string) => {
+                    try!(outf.write_str(index_string.as_slice()));
+                },
+                Err(e) => {
+                    println!("Error while indexing {}: {}", entry.display(), e);
+                    errors = true;
+                    continue
+                }
+            };
         };
-    };
+        Ok(())
+    }));
 
     if errors {
         Err(io::IoError {
@@ -461,8 +465,11 @@ impl Contact {
 
     pub fn write_create(&self) -> io::IoResult<()> {
         let string = write_component(&self.component);
-        let mut fp = try!(io::File::create(&self.path));
-        fp.write_str(string.as_slice())
+        let af = AtomicFile::new(&self.path, DisallowOverwrite, None);
+
+        af.write(|&: f: &mut io::File| {
+            f.write_str(string.as_slice())
+        })
     }
 }
 

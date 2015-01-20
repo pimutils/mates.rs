@@ -18,3 +18,6 @@ uuid = "*"
 
 [dependencies.vobject]
 git = "https://github.com/untitaker/rust-vobject.git"
+
+[dependencies.atomicwrites]
+git = "https://github.com/untitaker/rust-atomicwrites.git"

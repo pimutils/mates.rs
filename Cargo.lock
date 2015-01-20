@@ -2,10 +2,16 @@
 name = "mates"
 version = "0.0.1"
 dependencies = [
+ "atomicwrites 0.0.1 (git+https://github.com/untitaker/rust-atomicwrites.git)",
  "email 0.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "uuid 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "vobject 0.0.1 (git+https://github.com/untitaker/rust-vobject.git)",
 ]
+
+[[package]]
+name = "atomicwrites"
+version = "0.0.1"
+source = "git+https://github.com/untitaker/rust-atomicwrites.git#1441714408f20fae879aaa37a20e005a822b8155"
 
 [[package]]
 name = "chrono"
