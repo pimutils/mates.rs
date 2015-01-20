@@ -467,7 +467,7 @@ impl Contact {
         let string = write_component(&self.component);
         let af = AtomicFile::new(&self.path, DisallowOverwrite, None);
 
-        af.write(|&: f: &mut io::File| {
+        af.write(|&: f| {
             f.write_str(string.as_slice())
         })
     }
