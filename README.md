@@ -1,9 +1,17 @@
 # Mates
 
-A very simple addressbook program, operating on a directory of ``.vcf`` files,
-see [vdir](http://vdirsyncer.readthedocs.org/en/stable/vdir.html). It was
-written as an experiment to learn Rust, and might contain ugly code, it should
-work well and fast though.
+A commandline addressbook, operating on a directory of ``.vcf`` files,
+see [vdir](http://vdirsyncer.readthedocs.org/en/stable/vdir.html).
+
+The main focus is on performance when searching contacts. Mates maintains a
+simple textfile with only a few properties, on which it calls `grep`.
+Concretely, such a textfile looks like this:
+
+    work@example.com\tExample Man\t/home/user/.contacts/exampleman.vcf
+    home@example.com\tExample Man\t/home/user/.contacts/exampleman.vcf
+
+It was written as an experiment to learn Rust, and might contain ugly code, it
+should work well though.
 
 ## Installation
 
@@ -32,9 +40,9 @@ The other environment variables are:
 - ``MATES_GREP``, override the grep binary to use. Default to ``grep``.
 - ``MATES_EDITOR``, override the vCard editor to use. Default to ``EDITOR``.
 
-``mates index`` must be called periodically. Even when using mates' own
-commands, the index will be not updated automatically, as this would impact UI
-responsiveness massively.
+**Note: ``mates index`` must be called periodically.** Even when using mates'
+own commands, the index will be not updated automatically, as this would impact
+UI responsiveness massively.
 
 
 ## Integration
