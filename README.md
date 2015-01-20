@@ -15,9 +15,9 @@ should work well though.
 
 ## Installation
 
-You need to have Rust nightly and Cargo installed. On ArchLinux, the easiest
-way to obtain these is to install [`rust-nightly-bin` from the
-AUR](https://aur.archlinux.org/packages/rust-nightly-bin/).
+You need to have [Rust](http://www.rust-lang.org/) and Cargo installed. On
+ArchLinux, the easiest way to obtain these is to install `rust` from the
+official repositories and `cargo-bin` from the AUR.
 
 1. Clone this repository, `cd` to it.
 2. Run `cargo build --release`. You could omit the release-flag, but then mates
