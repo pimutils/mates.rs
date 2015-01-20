@@ -2,10 +2,8 @@
 
 A very simple addressbook program, operating on a directory of ``.vcf`` files,
 see [vdir](http://vdirsyncer.readthedocs.org/en/stable/vdir.html). It was
-written as an experiment to learn Rust, and it might contain hideous code.
-You're probably better off using one of the
-[alternatives](http://vdirsyncer.readthedocs.org/en/stable/supported.html#client-applications)
-listed in vdirsyncer's documentation.
+written as an experiment to learn Rust, and might contain ugly code, it should
+work well and fast though.
 
 ## Installation
 
@@ -60,8 +58,8 @@ that can be used instead of grep to search for contacts.
 ### Synchronization with CardDAV (and others)
 
 [Vdirsyncer](http://vdirsyncer.readthedocs.org/) can be used to synchronize to
-a CardDAV server. If you don't need that, using any decent file synchronization
-will work too.
+a CardDAV server, using the `filesystem` storage. If you don't need that, using
+any decent file synchronization will work too.
 
 ## License
 
