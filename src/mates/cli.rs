@@ -82,7 +82,7 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
 
     try!(af.write(|&mut: outf| {
         for entry in entries.iter() {
-            if !entry.is_file() {
+            if !entry.is_file() || !entry.filename_str().unwrap_or("").ends_with(".vcf") {
                 continue;
             }
 
