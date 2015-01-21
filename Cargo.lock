@@ -11,7 +11,7 @@ dependencies = [
 [[package]]
 name = "atomicwrites"
 version = "0.0.1"
-source = "git+https://github.com/untitaker/rust-atomicwrites.git#db6faa34f36bf58ceb15a3d207c151d05b721899"
+source = "git+https://github.com/untitaker/rust-atomicwrites.git#7c3e39c181dfcf76f42df16134ec0000560274db"
 
 [[package]]
 name = "chrono"
