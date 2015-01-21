@@ -15,9 +15,10 @@ should work well though.
 
 ## Installation
 
-You need to have [Rust](http://www.rust-lang.org/) and Cargo installed. On
-ArchLinux, the easiest way to obtain these is to install `rust` from the
-official repositories and `cargo-bin` from the AUR.
+On ArchLinux, use the [`mates-git` package from the
+AUR](https://aur.archlinux.org/packages/mates-git/).
+
+You need to have [Rust](http://www.rust-lang.org/) and Cargo installed.
 
 1. Clone this repository, `cd` to it.
 2. Run `cargo build --release`. You could omit the release-flag, but then mates
