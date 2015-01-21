@@ -70,4 +70,4 @@ any decent file synchronization will work too.
 
 ## License
 
-mates is released under the public domain.
+Mates is released under the MIT license, see `LICENSE` for details.
