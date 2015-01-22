@@ -47,9 +47,8 @@ For a manual installation, you need to have Rust_ and Cargo_ installed.
 Usage
 =====
 
-Run the binary with ``--help`` to list all environment variables that can be
-used for configuration. Then set the environment variable ``MATES_DIR`` to your
-directory of ``.vcf``-files.
+Set the environment variable ``MATES_DIR`` to your directory of ``.vcf``-files.
+Then run the binary with ``--help`` to list all commands. 
 
 The other environment variables are:
 
