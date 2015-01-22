@@ -1,13 +1,14 @@
 use std::os;
-use std::collections::HashMap;
 use std::io;
+use std::collections::HashMap;
 use std::io::fs::PathExtensions;
 use std::borrow::ToOwned;
 
-use vobject::{Component,Property,parse_component,write_component};
-use email::rfc5322::Rfc5322Parser;
-use uuid::Uuid;
-use atomicwrites::{AtomicFile,AllowOverwrite,DisallowOverwrite};
+use atomicwrites::{AtomicFile,AllowOverwrite};
+
+use utils::{
+    Contact, index_query, index_item_from_contact, parse_from_header, read_sender_from_email
+};
 
 macro_rules! main_try {
     ($result: expr, $errmsg: expr) => (
@@ -21,51 +22,6 @@ macro_rules! main_try {
         }
     )
 }
-
-struct Configuration {
-    index_path: Path,
-    vdir_path: Path,
-    editor_cmd: String,
-    grep_cmd: String
-}
-
-impl Configuration {
-    fn from_env(env: Vec<(String, String)>) -> Result<Configuration, String> {
-        let mut dict = HashMap::new();
-        dict.extend(env.into_iter().filter(|&(_, ref v)| v.len() > 0));
-        Ok(Configuration {
-            index_path: match dict.remove("MATES_INDEX") {
-                Some(x) => Path::new(x),
-                None => match dict.get("HOME") {
-                    Some(home) => {
-                        os::make_absolute(&Path::new(home).join(".mates_index")).unwrap()
-                    },
-                    None => return Err("Unable to determine user's home directory.".to_owned())
-                }
-            },
-            vdir_path: match dict.remove("MATES_DIR") {
-                Some(x) => Path::new(x),
-                None => return Err("MATES_DIR must be set to your vdir path (directory of vcf-files).".to_owned())
-            },
-            editor_cmd: match dict.remove("MATES_EDITOR") {
-                Some(x) => x,
-                None => match dict.remove("EDITOR") {
-                    Some(x) => x,
-                    None => return Err("MATES_EDITOR or EDITOR must be set.".to_owned())
-                }
-            },
-            grep_cmd: match dict.remove("MATES_GREP") {
-                Some(x) => x,
-                None => "grep".to_owned()
-            }
-        })
-    }
-
-    fn new() -> Result<Configuration, String> {
-        Configuration::from_env(os::env())
-    }
-}
-
 
 fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
     if !dir.is_dir() {
@@ -119,26 +75,6 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
         Ok(())
     }
 }
-
-
-fn index_item_from_contact(contact: &Contact) -> io::IoResult<String> {
-    let name = match contact.component.single_prop("FN") {
-        Some(name) => name.value_as_string(),
-        None => return Err(io::IoError {
-            kind: io::OtherIoError,
-            desc: "No name found.",
-            detail: None
-        })
-    };
-
-    let emails = contact.component.all_props("EMAIL");
-    let mut rv = String::new();
-    for email in emails.iter() {
-        rv.push_str(format!("{}\t{}\t{}\n", email.value_as_string(), name, contact.path.display()).as_slice());
-    };
-    Ok(rv)
-}
-
 
 pub fn cli_main() {
     let mut args = os::args().into_iter();
@@ -246,34 +182,6 @@ fn add_contact(contact_dir: &Path) -> io::IoResult<Contact> {
     Ok(contact)
 }
 
-
-/// Return a tuple (fullname, email)
-fn parse_from_header<'a>(s: &'a String) -> (Option<&'a str>, Option<&'a str>) {
-    let mut split = s.rsplitn(1, ' ');
-    let email = match split.next() {
-        Some(x) => Some(x.trim_left_matches('<').trim_right_matches('>')),
-        None => Some(s.as_slice())
-    };
-    let name = split.next();
-    (name, email)
-}
-
-/// Given an email, return value of From header.
-fn read_sender_from_email(email: &str) -> Option<String> {
-    let mut parser = Rfc5322Parser::new(email);
-    while !parser.eof() {
-        match parser.consume_header() {
-            Some(header) => {
-                if header.name == "From" {
-                    return header.get_value()
-                };
-            },
-            None => return None
-        };
-    };
-    None
-}
-
 fn edit_contact(config: &Configuration, query: &str) -> Result<(), String> {
 
     let results = {
@@ -359,133 +267,49 @@ fn email_query<'a>(config: &Configuration, query: &str) -> io::IoResult<()> {
     Ok(())
 }
 
-fn index_query<'a>(config: &Configuration, query: &str) -> io::IoResult<IndexIterator<'a>> {
-    let mut process = try!(io::Command::new(config.grep_cmd.as_slice())
-        .arg(query.as_slice())
-        .stderr(io::process::InheritFd(2))
-        .spawn());
 
-    {
-        let mut index_fp = try!(io::File::open(&config.index_path));
-        let mut stdin = process.stdin.take().unwrap();
-        try!(stdin.write_str(try!(index_fp.read_to_string()).as_slice()));
-    }
 
-    let stream = match process.stdout.as_mut() {
-        Some(x) => x,
-        None => return Err(io::IoError {
-            kind: io::IoUnavailable,
-            desc: "Failed to get stdout from grep process.",
-            detail: None
-        })
-    };
-
-    let output = try!(stream.read_to_string());
-    Ok(IndexIterator::new(&output))
+pub struct Configuration {
+    pub index_path: Path,
+    pub vdir_path: Path,
+    pub editor_cmd: String,
+    pub grep_cmd: String
 }
 
-struct IndexItem<'a> {
-    pub email: String,
-    pub name: String,
-    pub filepath: String
-}
-
-impl<'a> IndexItem<'a> {
-    fn new(line: String) -> IndexItem<'a> {
-        let mut parts = line.split('\t');
-
-        IndexItem {
-            email: parts.next().unwrap_or("").to_string(),
-            name: parts.next().unwrap_or("").to_string(),
-            filepath: parts.next().unwrap_or("").to_string()
-        }
-    }
-}
-
-struct IndexIterator<'a> {
-    linebuffer: Vec<String>
-}
-
-impl<'a> IndexIterator<'a> {
-    fn new(output: &String) -> IndexIterator<'a> {
-
-        let rv = output.split('\n').map(|x: &str| x.to_string()).collect();
-        IndexIterator {
-            linebuffer: rv
-        }
-    }
-}
-
-impl<'a> Iterator for IndexIterator<'a> {
-    type Item = IndexItem<'a>;
-
-    fn next(&mut self) -> Option<IndexItem<'a>> {
-        match self.linebuffer.pop() {
-            Some(x) => Some(IndexItem::new(x)),
-            None => None
-        }
-    }
-}
-
-struct Contact {
-    pub component: Component,
-    pub path: Path
-}
-
-impl Contact {
-    pub fn from_file(path: Path) -> io::IoResult<Contact> {
-        let mut contact_file = try!(io::File::open(&path));
-        let contact_string = try!(contact_file.read_to_string());
-        let item = match parse_component(contact_string.as_slice()) {
-            Ok(x) => x,
-            Err(e) => return Err(io::IoError {
-                kind: io::OtherIoError,
-                desc: "Error while parsing contact",
-                detail: Some(e)
-            })
-        };
-        Ok(Contact { component: item, path: path })
-    }
-
-    pub fn generate(fullname: Option<&str>, email: Option<&str>, dir: &Path) -> Contact {
-        let (uid, contact_path) = {
-            let mut uid;
-            let mut contact_path;
-            loop {
-                uid = Uuid::new_v4().to_simple_string();
-                contact_path = dir.join(Path::new(format!("{}.vcf", uid)));
-                if !contact_path.exists() {
-                    break
+impl Configuration {
+    pub fn from_env(env: Vec<(String, String)>) -> Result<Configuration, String> {
+        let mut dict = HashMap::new();
+        dict.extend(env.into_iter().filter(|&(_, ref v)| v.len() > 0));
+        Ok(Configuration {
+            index_path: match dict.remove("MATES_INDEX") {
+                Some(x) => Path::new(x),
+                None => match dict.get("HOME") {
+                    Some(home) => {
+                        os::make_absolute(&Path::new(home).join(".mates_index")).unwrap()
+                    },
+                    None => return Err("Unable to determine user's home directory.".to_owned())
                 }
-            };
-            (uid, contact_path)
-        };
-        Contact { path: contact_path, component: generate_component(uid, fullname, email) }
-    }
-
-    pub fn write_create(&self) -> io::IoResult<()> {
-        let string = write_component(&self.component);
-        let af = AtomicFile::new(&self.path, DisallowOverwrite, None);
-
-        af.write(|&: f| {
-            f.write_str(string.as_slice())
+            },
+            vdir_path: match dict.remove("MATES_DIR") {
+                Some(x) => Path::new(x),
+                None => return Err("MATES_DIR must be set to your vdir path (directory of vcf-files).".to_owned())
+            },
+            editor_cmd: match dict.remove("MATES_EDITOR") {
+                Some(x) => x,
+                None => match dict.remove("EDITOR") {
+                    Some(x) => x,
+                    None => return Err("MATES_EDITOR or EDITOR must be set.".to_owned())
+                }
+            },
+            grep_cmd: match dict.remove("MATES_GREP") {
+                Some(x) => x,
+                None => "grep".to_owned()
+            }
         })
     }
+
+    pub fn new() -> Result<Configuration, String> {
+        Configuration::from_env(os::env())
+    }
 }
 
-
-fn generate_component(uid: String, fullname: Option<&str>, email: Option<&str>) -> Component {
-    let mut comp = Component::new("VCARD");
-
-    match fullname {
-        Some(x) => comp.all_props_mut("FN").push(Property::new(x)),
-        None => ()
-    };
-
-    match email {
-        Some(x) => comp.all_props_mut("EMAIL").push(Property::new(x)),
-        None => ()
-    };
-    comp.all_props_mut("UID").push(Property::new(uid.as_slice()));
-    comp
-}

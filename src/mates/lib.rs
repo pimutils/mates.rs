@@ -6,3 +6,4 @@ extern crate uuid;
 extern crate atomicwrites;
 
 pub mod cli;
+mod utils;
