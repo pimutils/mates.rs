@@ -7,7 +7,7 @@ use std::borrow::ToOwned;
 use atomicwrites::{AtomicFile,AllowOverwrite};
 
 use utils::{
-    Contact, index_query, index_item_from_contact, parse_from_header, read_sender_from_email
+    Contact, add_contact_from_email, index_query, index_item_from_contact
 };
 
 macro_rules! main_try {
@@ -141,7 +141,9 @@ Commands:
             main_try!(email_query(&config, query.as_slice()), "Failed to execute grep");
         },
         "add" => {
-            let contact = main_try!(add_contact(&config.vdir_path), "Failed to add contact");
+            let email = main_try!(io::stdin().lock().read_to_string(), "Failed to read email");
+            let contact = main_try!(add_contact_from_email(&config.vdir_path,
+                                                           email.as_slice()), "Failed to add contact");
             println!("{}", contact.path.display());
 
             let mut index_fp = main_try!(io::File::open_mode(
@@ -164,22 +166,6 @@ Commands:
             os::set_exit_status(1);
         }
     };
-}
-
-fn add_contact(contact_dir: &Path) -> io::IoResult<Contact> {
-    let stdin = try!(io::stdin().lock().read_to_string());
-    let from_header = match read_sender_from_email(stdin.as_slice()) {
-        Some(x) => x,
-        None => return Err(io::IoError {
-            kind: io::InvalidInput,
-            desc: "Couldn't find From-header in email.",
-            detail: None
-        })
-    };
-    let (fullname, email) = parse_from_header(&from_header);
-    let contact = Contact::generate(fullname, email, contact_dir);
-    try!(contact.write_create());
-    Ok(contact)
 }
 
 fn edit_contact(config: &Configuration, query: &str) -> Result<(), String> {
@@ -266,8 +252,6 @@ fn email_query<'a>(config: &Configuration, query: &str) -> io::IoResult<()> {
     };
     Ok(())
 }
-
-
 
 pub struct Configuration {
     pub index_path: Path,

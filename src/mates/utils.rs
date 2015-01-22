@@ -183,3 +183,19 @@ pub fn read_sender_from_email(email: &str) -> Option<String> {
     };
     None
 }
+
+/// Write sender from given email as .vcf file to given directory.
+pub fn add_contact_from_email(contact_dir: &Path, email_input: &str) -> io::IoResult<Contact> {
+    let from_header = match read_sender_from_email(email_input) {
+        Some(x) => x,
+        None => return Err(io::IoError {
+            kind: io::InvalidInput,
+            desc: "Couldn't find From-header in email.",
+            detail: None
+        })
+    };
+    let (fullname, email) = parse_from_header(&from_header);
+    let contact = Contact::generate(fullname, email, contact_dir);
+    try!(contact.write_create());
+    Ok(contact)
+}
