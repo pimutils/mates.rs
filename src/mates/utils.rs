@@ -14,8 +14,7 @@ struct IndexIterator<'a> {
 
 impl<'a> IndexIterator<'a> {
     fn new(output: &String) -> IndexIterator<'a> {
-
-        let rv = output.split('\n').map(|x: &str| x.to_string()).collect();
+        let rv = output.split('\n').map(|x| x.to_string()).collect();
         IndexIterator {
             linebuffer: rv
         }
