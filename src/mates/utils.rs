@@ -33,6 +33,27 @@ impl<'a> Iterator for IndexIterator<'a> {
     }
 }
 
+struct IndexItem<'a> {
+    pub email: String,
+    pub name: String,
+    pub filepath: Option<Path>
+}
+
+impl<'a> IndexItem<'a> {
+    fn new(line: String) -> IndexItem<'a> {
+        let mut parts = line.split('\t');
+
+        IndexItem {
+            email: parts.next().unwrap_or("").to_string(),
+            name: parts.next().unwrap_or("").to_string(),
+            filepath: match parts.next() {
+                Some(x) => Some(Path::new(x)),
+                None => None
+            }
+        }
+    }
+}
+
 pub struct Contact {
     pub component: Component,
     pub path: Path
@@ -119,24 +140,6 @@ pub fn index_query<'a>(config: &Configuration, query: &str) -> io::IoResult<Inde
 
     let output = try!(stream.read_to_string());
     Ok(IndexIterator::new(&output))
-}
-
-struct IndexItem<'a> {
-    pub email: String,
-    pub name: String,
-    pub filepath: String
-}
-
-impl<'a> IndexItem<'a> {
-    fn new(line: String) -> IndexItem<'a> {
-        let mut parts = line.split('\t');
-
-        IndexItem {
-            email: parts.next().unwrap_or("").to_string(),
-            name: parts.next().unwrap_or("").to_string(),
-            filepath: parts.next().unwrap_or("").to_string()
-        }
-    }
 }
 
 pub fn index_item_from_contact(contact: &Contact) -> io::IoResult<String> {

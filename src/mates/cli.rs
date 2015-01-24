@@ -169,25 +169,19 @@ Commands:
 }
 
 fn edit_contact(config: &Configuration, query: &str) -> Result<(), String> {
-
     let results = {
         if match os::make_absolute(&Path::new(query)) {
             Ok(x) => x.is_file(),
             Err(_) => false
         } {
-            vec![query.to_string()]
+            vec![Path::new(query)]
         } else {
             let results_iter = match index_query(config, query) {
                 Ok(x) => x,
                 Err(e) => return Err(format!("Error while fetching index: {}", e))
             };
 
-            results_iter.filter_map(|x| {
-                if x.filepath.len() > 0 {
-                    Some(x.filepath)
-                } else {
-                    None
-                }}).collect()
+            results_iter.filter_map(|x| x.filepath).collect()
         }
     };
 
@@ -197,13 +191,13 @@ fn edit_contact(config: &Configuration, query: &str) -> Result<(), String> {
         return Err("Ambiguous query.".to_string());
     }
 
-    let fpath = results[0].as_slice();
+    let fpath = &results[0];
     let mut process = match io::Command::new("sh")
         .arg("-c")
         // clear stdin, http://unix.stackexchange.com/a/77593
         .arg(format!("$0 -- \"$1\" < $2"))
         .arg(config.editor_cmd.as_slice())
-        .arg(fpath)
+        .arg(fpath.as_str().unwrap())
         .arg("/dev/tty")
         .stdin(io::process::InheritFd(0))
         .stdout(io::process::InheritFd(1))
@@ -218,7 +212,7 @@ fn edit_contact(config: &Configuration, query: &str) -> Result<(), String> {
         Err(e) => return Err(format!("Error while invoking editor: {}", e))
     };
 
-    if match io::File::open(&Path::new(fpath)).read_to_string() {
+    if match io::File::open(fpath).read_to_string() {
         Ok(x) => x,
         Err(e) => return Err(format!("File can't be read after user edited it: {}", e))
     }.as_slice().trim().len() == 0 {
@@ -232,7 +226,7 @@ fn mutt_query<'a>(config: &Configuration, query: &str) -> io::IoResult<()> {
     println!("");  // For some reason mutt requires an empty line
     for item in try!(index_query(config, query)) {
         if item.email.len() > 0 && item.name.len() > 0 {
-            println!("{}\t{}\t{}", item.email, item.name, item.filepath);
+            println!("{}\t{}", item.email, item.name);
         };
     };
     Ok(())
@@ -240,8 +234,9 @@ fn mutt_query<'a>(config: &Configuration, query: &str) -> io::IoResult<()> {
 
 fn file_query<'a>(config: &Configuration, query: &str) -> io::IoResult<()> {
     for item in try!(index_query(config, query)) {
-        if item.filepath.len() > 0 {
-            println!("{}", item.filepath)
+        match item.filepath {
+            Some(x) => println!("{}", x.display()),
+            None => ()
         };
     };
     Ok(())
