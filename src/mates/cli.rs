@@ -171,7 +171,10 @@ Commands:
 fn edit_contact(config: &Configuration, query: &str) -> Result<(), String> {
 
     let results = {
-        if config.vdir_path.join(query).is_file() {
+        if match os::make_absolute(&Path::new(query)) {
+            Ok(x) => x.is_file(),
+            Err(_) => false
+        } {
             vec![query.to_string()]
         } else {
             let results_iter = match index_query(config, query) {
