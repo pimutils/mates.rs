@@ -31,7 +31,8 @@ On ArchLinux, simply use the mates-git_ package from the AUR.
 
 .. _mates-git: https://aur.archlinux.org/packages/mates-git/
 
-For a manual installation, you need to have Rust_ and Cargo_ installed.
+For a manual installation, you need to have the nightly versions of Rust_ and
+Cargo_ installed.
 
 .. _Rust: http://www.rust-lang.org/
 .. _Cargo: https://crates.io/
