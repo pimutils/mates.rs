@@ -1,5 +1,6 @@
 use std::io;
 use std::io::fs::PathExtensions;
+use std::collections::HashSet;
 
 use vobject::{Component,Property,parse_component,write_component};
 use email::rfc5322::Rfc5322Parser;
@@ -139,6 +140,16 @@ pub fn index_query<'a>(config: &Configuration, query: &str) -> io::IoResult<Inde
 
     let output = try!(stream.read_to_string());
     Ok(IndexIterator::new(&output))
+}
+
+/// Better than index_query if you're only interested in the filepath, as duplicate entries will be
+/// removed.
+pub fn file_query(config: &Configuration, query: &str) -> io::IoResult<HashSet<Path>> {
+    let mut rv: HashSet<Path> = HashSet::new();
+    rv.extend(
+        try!(index_query(config, query)).filter_map(|x| x.filepath)
+    );
+    Ok(rv)
 }
 
 pub fn index_item_from_contact(contact: &Contact) -> io::IoResult<String> {

@@ -6,9 +6,7 @@ use std::borrow::ToOwned;
 
 use atomicwrites::{AtomicFile,AllowOverwrite};
 
-use utils::{
-    Contact, add_contact_from_email, index_query, index_item_from_contact
-};
+use utils;
 
 macro_rules! main_try {
     ($result: expr, $errmsg: expr) => (
@@ -42,7 +40,7 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
                 continue;
             }
 
-            let contact = match Contact::from_file(entry.clone()) {
+            let contact = match utils::Contact::from_file(entry.clone()) {
                 Ok(x) => x,
                 Err(e) => {
                     println!("Error while reading {}: {}", entry.display(), e);
@@ -51,7 +49,7 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
                 }
             };
 
-            match index_item_from_contact(&contact) {
+            match utils::index_item_from_contact(&contact) {
                 Ok(index_string) => {
                     try!(outf.write_str(index_string.as_slice()));
                 },
@@ -142,8 +140,10 @@ Commands:
         },
         "add" => {
             let email = main_try!(io::stdin().lock().read_to_string(), "Failed to read email");
-            let contact = main_try!(add_contact_from_email(&config.vdir_path,
-                                                           email.as_slice()), "Failed to add contact");
+            let contact = main_try!(utils::add_contact_from_email(
+                &config.vdir_path,
+                email.as_slice()
+            ), "Failed to add contact");
             println!("{}", contact.path.display());
 
             let mut index_fp = main_try!(io::File::open_mode(
@@ -153,7 +153,7 @@ Commands:
                 "Failed to open index"
             );
 
-            let index_entry = main_try!(index_item_from_contact(&contact), "Failed to generate index");
+            let index_entry = main_try!(utils::index_item_from_contact(&contact), "Failed to generate index");
             main_try!(index_fp.write_str(index_entry.as_slice()), "Failed to write to index");
         },
         "edit" => {
@@ -176,12 +176,10 @@ fn edit_contact(config: &Configuration, query: &str) -> Result<(), String> {
         } {
             vec![Path::new(query)]
         } else {
-            let results_iter = match index_query(config, query) {
+            match utils::file_query(config, query) {
                 Ok(x) => x,
                 Err(e) => return Err(format!("Error while fetching index: {}", e))
-            };
-
-            results_iter.filter_map(|x| x.filepath).collect()
+            }.into_iter().collect()
         }
     };
 
@@ -224,7 +222,7 @@ fn edit_contact(config: &Configuration, query: &str) -> Result<(), String> {
 
 fn mutt_query<'a>(config: &Configuration, query: &str) -> io::IoResult<()> {
     println!("");  // For some reason mutt requires an empty line
-    for item in try!(index_query(config, query)) {
+    for item in try!(utils::index_query(config, query)) {
         if item.email.len() > 0 && item.name.len() > 0 {
             println!("{}\t{}", item.email, item.name);
         };
@@ -233,17 +231,14 @@ fn mutt_query<'a>(config: &Configuration, query: &str) -> io::IoResult<()> {
 }
 
 fn file_query<'a>(config: &Configuration, query: &str) -> io::IoResult<()> {
-    for item in try!(index_query(config, query)) {
-        match item.filepath {
-            Some(x) => println!("{}", x.display()),
-            None => ()
-        };
+    for path in try!(utils::file_query(config, query)).iter() {
+        println!("{}", path.display());
     };
     Ok(())
 }
 
 fn email_query<'a>(config: &Configuration, query: &str) -> io::IoResult<()> {
-    for item in try!(index_query(config, query)) {
+    for item in try!(utils::index_query(config, query)) {
         if item.name.len() > 0 && item.email.len() > 0 {
             println!("{} <{}>", item.name, item.email);
         };
