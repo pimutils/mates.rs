@@ -1,4 +1,4 @@
-#![allow(unstable)]
+#![feature(collections,core,io,os,path)]
 extern crate getopts;
 extern crate vobject;
 extern crate email;

@@ -1,5 +1,5 @@
-use std::io;
-use std::io::fs::PathExtensions;
+use std::old_io;
+use std::old_io::fs::PathExtensions;
 use std::collections::HashSet;
 
 use vobject::{Component,Property,parse_component,write_component};
@@ -60,13 +60,13 @@ pub struct Contact {
 }
 
 impl Contact {
-    pub fn from_file(path: Path) -> io::IoResult<Contact> {
-        let mut contact_file = try!(io::File::open(&path));
+    pub fn from_file(path: Path) -> old_io::IoResult<Contact> {
+        let mut contact_file = try!(old_io::File::open(&path));
         let contact_string = try!(contact_file.read_to_string());
         let item = match parse_component(contact_string.as_slice()) {
             Ok(x) => x,
-            Err(e) => return Err(io::IoError {
-                kind: io::OtherIoError,
+            Err(e) => return Err(old_io::IoError {
+                kind: old_io::OtherIoError,
                 desc: "Error while parsing contact",
                 detail: Some(e)
             })
@@ -90,7 +90,7 @@ impl Contact {
         Contact { path: contact_path, component: generate_component(uid, fullname, email) }
     }
 
-    pub fn write_create(&self) -> io::IoResult<()> {
+    pub fn write_create(&self) -> old_io::IoResult<()> {
         let string = write_component(&self.component);
         let af = AtomicFile::new(&self.path, DisallowOverwrite, None);
 
@@ -117,22 +117,22 @@ fn generate_component(uid: String, fullname: Option<&str>, email: Option<&str>) 
     comp
 }
 
-pub fn index_query<'a>(config: &Configuration, query: &str) -> io::IoResult<IndexIterator<'a>> {
-    let mut process = try!(io::Command::new(config.grep_cmd.as_slice())
+pub fn index_query<'a>(config: &Configuration, query: &str) -> old_io::IoResult<IndexIterator<'a>> {
+    let mut process = try!(old_io::Command::new(config.grep_cmd.as_slice())
         .arg(query.as_slice())
-        .stderr(io::process::InheritFd(2))
+        .stderr(old_io::process::InheritFd(2))
         .spawn());
 
     {
-        let mut index_fp = try!(io::File::open(&config.index_path));
+        let mut index_fp = try!(old_io::File::open(&config.index_path));
         let mut stdin = process.stdin.take().unwrap();
         try!(stdin.write_str(try!(index_fp.read_to_string()).as_slice()));
     }
 
     let stream = match process.stdout.as_mut() {
         Some(x) => x,
-        None => return Err(io::IoError {
-            kind: io::IoUnavailable,
+        None => return Err(old_io::IoError {
+            kind: old_io::IoUnavailable,
             desc: "Failed to get stdout from grep process.",
             detail: None
         })
@@ -144,7 +144,7 @@ pub fn index_query<'a>(config: &Configuration, query: &str) -> io::IoResult<Inde
 
 /// Better than index_query if you're only interested in the filepath, as duplicate entries will be
 /// removed.
-pub fn file_query(config: &Configuration, query: &str) -> io::IoResult<HashSet<Path>> {
+pub fn file_query(config: &Configuration, query: &str) -> old_io::IoResult<HashSet<Path>> {
     let mut rv: HashSet<Path> = HashSet::new();
     rv.extend(
         try!(index_query(config, query)).filter_map(|x| x.filepath)
@@ -152,11 +152,11 @@ pub fn file_query(config: &Configuration, query: &str) -> io::IoResult<HashSet<P
     Ok(rv)
 }
 
-pub fn index_item_from_contact(contact: &Contact) -> io::IoResult<String> {
+pub fn index_item_from_contact(contact: &Contact) -> old_io::IoResult<String> {
     let name = match contact.component.single_prop("FN") {
         Some(name) => name.value_as_string(),
-        None => return Err(io::IoError {
-            kind: io::OtherIoError,
+        None => return Err(old_io::IoError {
+            kind: old_io::OtherIoError,
             desc: "No name found.",
             detail: None
         })
@@ -198,11 +198,11 @@ pub fn read_sender_from_email(email: &str) -> Option<String> {
 }
 
 /// Write sender from given email as .vcf file to given directory.
-pub fn add_contact_from_email(contact_dir: &Path, email_input: &str) -> io::IoResult<Contact> {
+pub fn add_contact_from_email(contact_dir: &Path, email_input: &str) -> old_io::IoResult<Contact> {
     let from_header = match read_sender_from_email(email_input) {
         Some(x) => x,
-        None => return Err(io::IoError {
-            kind: io::InvalidInput,
+        None => return Err(old_io::IoError {
+            kind: old_io::InvalidInput,
             desc: "Couldn't find From-header in email.",
             detail: None
         })

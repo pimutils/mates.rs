@@ -1,7 +1,7 @@
 use std::os;
-use std::io;
+use std::old_io;
 use std::collections::HashMap;
-use std::io::fs::PathExtensions;
+use std::old_io::fs::PathExtensions;
 use std::borrow::ToOwned;
 
 use atomicwrites::{AtomicFile,AllowOverwrite};
@@ -21,17 +21,17 @@ macro_rules! main_try {
     )
 }
 
-fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
+fn build_index(outfile: &Path, dir: &Path) -> old_io::IoResult<()> {
     if !dir.is_dir() {
-        return Err(io::IoError {
-            kind: io::MismatchedFileTypeForOperation,
+        return Err(old_io::IoError {
+            kind: old_io::MismatchedFileTypeForOperation,
             desc: "MATES_DIR must be a directory.",
             detail: None
         });
     };
 
     let af = AtomicFile::new(outfile, AllowOverwrite, None);
-    let entries = try!(io::fs::readdir(dir));
+    let entries = try!(old_io::fs::readdir(dir));
     let mut errors = false;
 
     try!(af.write(|&mut: outf| {
@@ -64,8 +64,8 @@ fn build_index(outfile: &Path, dir: &Path) -> io::IoResult<()> {
     }));
 
     if errors {
-        Err(io::IoError {
-            kind: io::OtherIoError,
+        Err(old_io::IoError {
+            kind: old_io::OtherIoError,
             desc: "Several errors happened while generating the index.",
             detail: None
         })
@@ -139,17 +139,17 @@ Commands:
             main_try!(email_query(&config, query.as_slice()), "Failed to execute grep");
         },
         "add" => {
-            let email = main_try!(io::stdin().lock().read_to_string(), "Failed to read email");
+            let email = main_try!(old_io::stdin().lock().read_to_string(), "Failed to read email");
             let contact = main_try!(utils::add_contact_from_email(
                 &config.vdir_path,
                 email.as_slice()
             ), "Failed to add contact");
             println!("{}", contact.path.display());
 
-            let mut index_fp = main_try!(io::File::open_mode(
+            let mut index_fp = main_try!(old_io::File::open_mode(
                 &config.index_path,
-                io::Append,
-                io::Write),
+                old_io::Append,
+                old_io::Write),
                 "Failed to open index"
             );
 
@@ -190,16 +190,16 @@ fn edit_contact(config: &Configuration, query: &str) -> Result<(), String> {
     }
 
     let fpath = &results[0];
-    let mut process = match io::Command::new("sh")
+    let mut process = match old_io::Command::new("sh")
         .arg("-c")
         // clear stdin, http://unix.stackexchange.com/a/77593
         .arg(format!("$0 -- \"$1\" < $2"))
         .arg(config.editor_cmd.as_slice())
         .arg(fpath.as_str().unwrap())
         .arg("/dev/tty")
-        .stdin(io::process::InheritFd(0))
-        .stdout(io::process::InheritFd(1))
-        .stderr(io::process::InheritFd(2))
+        .stdin(old_io::process::InheritFd(0))
+        .stdout(old_io::process::InheritFd(1))
+        .stderr(old_io::process::InheritFd(2))
         .spawn() {
             Ok(x) => x,
             Err(e) => return Err(format!("Error while invoking editor: {}", e))
@@ -210,7 +210,7 @@ fn edit_contact(config: &Configuration, query: &str) -> Result<(), String> {
         Err(e) => return Err(format!("Error while invoking editor: {}", e))
     };
 
-    if match io::File::open(fpath).read_to_string() {
+    if match old_io::File::open(fpath).read_to_string() {
         Ok(x) => x,
         Err(e) => return Err(format!("File can't be read after user edited it: {}", e))
     }.as_slice().trim().len() == 0 {
@@ -220,7 +220,7 @@ fn edit_contact(config: &Configuration, query: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn mutt_query<'a>(config: &Configuration, query: &str) -> io::IoResult<()> {
+fn mutt_query<'a>(config: &Configuration, query: &str) -> old_io::IoResult<()> {
     println!("");  // For some reason mutt requires an empty line
     for item in try!(utils::index_query(config, query)) {
         if item.email.len() > 0 && item.name.len() > 0 {
@@ -230,14 +230,14 @@ fn mutt_query<'a>(config: &Configuration, query: &str) -> io::IoResult<()> {
     Ok(())
 }
 
-fn file_query<'a>(config: &Configuration, query: &str) -> io::IoResult<()> {
+fn file_query<'a>(config: &Configuration, query: &str) -> old_io::IoResult<()> {
     for path in try!(utils::file_query(config, query)).iter() {
         println!("{}", path.display());
     };
     Ok(())
 }
 
-fn email_query<'a>(config: &Configuration, query: &str) -> io::IoResult<()> {
+fn email_query<'a>(config: &Configuration, query: &str) -> old_io::IoResult<()> {
     for item in try!(utils::index_query(config, query)) {
         if item.name.len() > 0 && item.email.len() > 0 {
             println!("{} <{}>", item.name, item.email);
