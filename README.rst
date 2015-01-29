@@ -14,9 +14,9 @@ A commandline addressbook. The main goals are:
      fulfill this task (which can be configured with ``MATES_EDITOR``), by
      default it will open your text editor.
 
-- **UI responsiveness** For tab-completing email addresses in mutt, mates
-  maintains a simple textfile with only a few fields from the vCard file, on
-  which it calls ``grep``. The textfile looks like this::
+- **UI responsiveness** For completing email addresses in mutt, mates maintains
+  a simple textfile with only a few fields from the vCard file, on which it
+  calls ``grep``. The textfile looks like this::
 
       work@example.com\tExample Man\t/home/user/.contacts/exampleman.vcf
       home@example.com\tExample Man\t/home/user/.contacts/exampleman.vcf
@@ -27,7 +27,8 @@ A commandline addressbook. The main goals are:
 Installation
 ============
 
-[![Build Status](https://travis-ci.org/untitaker/mates.rs.svg?branch=master)](https://travis-ci.org/untitaker/mates.rs)
+.. image:: https://travis-ci.org/untitaker/mates.rs.svg?branch=master
+    :target: https://travis-ci.org/untitaker/mates.rs
 
 If the above button is green, mates doesn't break against Rust nightly.
 
@@ -75,9 +76,12 @@ Mutt
 ::
 
     set query_command= "mates mutt-query '%s'"
+    macro index,pager A "<pipe-message>mates add | xargs mates edit<enter>" "add the sender address"
+
+    # Optional, I like it.
     bind editor <Tab> complete-query
     bind editor ^T    complete
-    macro index,pager A "<pipe-message>mates add | xargs mates edit<enter>" "add the sender address"
+
 
 Selecta (and similar)
 ---------------------
