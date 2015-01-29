@@ -27,6 +27,10 @@ A commandline addressbook. The main goals are:
 Installation
 ============
 
+[![Build Status](https://travis-ci.org/untitaker/mates.rs.svg?branch=master)](https://travis-ci.org/untitaker/mates.rs)
+
+If the above button is green, mates doesn't break against Rust nightly.
+
 On ArchLinux, simply use the mates-git_ package from the AUR.
 
 .. _mates-git: https://aur.archlinux.org/packages/mates-git/
