@@ -73,14 +73,36 @@ Integration
 Mutt
 ----
 
+Query command in mutt (email autocompletion)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 ::
 
-    set query_command= "mates mutt-query '%s'"
-    macro index,pager A "<pipe-message>mates add | xargs mates edit<enter>" "add the sender address"
+      # ~/.muttrc
 
-    # Optional, I like it.
-    bind editor <Tab> complete-query
-    bind editor ^T    complete
+      set query_command= "mates mutt-query '%s'"
+
+      # Normally you'd have to hit Ctrl-T for completion.
+      # This rebinds it to Tab.
+      bind editor <Tab> complete-query
+      bind editor ^T    complete
+
+
+Create new contact from message
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+::
+
+    # ~/.muttrc
+
+    macro index,pager A \
+        "<pipe-message>mates add | xargs mates edit<enter>" \
+        "add the sender address"
+
+With this configuration, hitting ``A`` when viewing a message or highlighting
+it in the folder view will add it to your contacts and open the new contact in
+your editor. If you clear the file, the new contact will be deleted.
 
 
 Selecta (and similar)

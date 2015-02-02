@@ -91,8 +91,10 @@ Commands:
     add:
         Take mail from stdin, add sender to contacts. Print filename.
     edit <file-or-query>:
-        Open contact (given by filepath or search-string) in $MATES_EDITOR. If
-        the file is cleared, the contact is removed.", program);
+        Open contact (given by filepath or search-string) in $MATES_EDITOR. If the file is cleared,
+        the contact is removed. As a further convenience it also clears stdin, which is necessary
+        for editors and most interactive programs to not act weird when piped to.",
+        program);
 
     let print_help = |&:| {
         println!("{}", help);
