@@ -27,7 +27,7 @@ version = "0.0.8"
 source = "git+https://github.com/untitaker/rust-email.git?branch=results#bb1df8b3eb6fed13605e246a9d6c32d5db7c0e65"
 dependencies = [
  "chrono 0.1.18 (registry+https://github.com/rust-lang/crates.io-index)",
- "encoding 0.2.21 (registry+https://github.com/rust-lang/crates.io-index)",
+ "encoding 0.2.22 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.2.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.16 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -35,7 +35,7 @@ dependencies = [
 
 [[package]]
 name = "encoding"
-version = "0.2.21"
+version = "0.2.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "encoding-index-japanese 1.20141219.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -107,8 +107,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "peg"
-version = "0.1.5"
-source = "git+https://github.com/untitaker/rust-peg.git?branch=more-breakages#83ba300d2ba315ddc645168f57f618ab6339cbd3"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "rustc-serialize"
@@ -135,8 +135,8 @@ dependencies = [
 [[package]]
 name = "vobject"
 version = "0.0.1"
-source = "git+https://github.com/untitaker/rust-vobject.git#6c4f77b6621eff63bf2291f6479c4ee26e3e61b6"
+source = "git+https://github.com/untitaker/rust-vobject.git#9013376a8741fcac22e045442cdcaccbf7f22ad7"
 dependencies = [
- "peg 0.1.5 (git+https://github.com/untitaker/rust-peg.git?branch=more-breakages)",
+ "peg 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
