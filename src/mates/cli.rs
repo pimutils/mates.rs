@@ -1,6 +1,5 @@
-use std::os;
+use std::env;
 use std::old_io;
-use std::collections::HashMap;
 use std::old_io::fs::PathExtensions;
 use std::borrow::ToOwned;
 
@@ -14,11 +13,30 @@ macro_rules! main_try {
             Ok(m) => m,
             Err(e) => {
                 println!("{}: {}", $errmsg, e);
-                os::set_exit_status(1);
+                env::set_exit_status(1);
                 return;
             }
         }
     )
+}
+
+macro_rules! get_pwd {
+    () => (
+        match env::current_dir() {
+            Ok(x) => x,
+            Err(e) => panic!(format!("Failed to get current working directory: {}", e))
+        }
+    )
+}
+
+fn get_envvar(key: &str) -> Option<String> {
+    match env::var_string(key) {
+        Ok(x) => Some(x),
+        Err(e) => match e {
+            env::VarError::NotPresent => None,
+            env::VarError::NotUnicode(_) => panic!(format!("{} is not unicode.", key))
+        }
+    }
 }
 
 fn build_index(outfile: &Path, dir: &Path) -> old_io::IoResult<()> {
@@ -75,7 +93,7 @@ fn build_index(outfile: &Path, dir: &Path) -> old_io::IoResult<()> {
 }
 
 pub fn cli_main() {
-    let mut args = os::args().into_iter();
+    let mut args = env::args().map(|a| a.into_string().unwrap());
     let program = args.next().unwrap_or("mates".to_string());
 
     let help = format!("Usage: {} COMMAND
@@ -104,7 +122,7 @@ Commands:
         Some(x) => x,
         None => {
             print_help();
-            os::set_exit_status(1);
+            env::set_exit_status(1);
             return;
         }
     };
@@ -118,7 +136,7 @@ Commands:
         Ok(x) => x,
         Err(e) => {
             println!("Error while reading configuration: {}", e);
-            os::set_exit_status(1);
+            env::set_exit_status(1);
             return;
         }
     };
@@ -165,24 +183,19 @@ Commands:
         _ => {
             println!("Invalid command: {}", command);
             print_help();
-            os::set_exit_status(1);
+            env::set_exit_status(1);
         }
     };
 }
 
 fn edit_contact(config: &Configuration, query: &str) -> Result<(), String> {
-    let results = {
-        if match os::make_absolute(&Path::new(query)) {
-            Ok(x) => x.is_file(),
-            Err(_) => false
-        } {
-            vec![Path::new(query)]
-        } else {
-            match utils::file_query(config, query) {
-                Ok(x) => x,
-                Err(e) => return Err(format!("Error while fetching index: {}", e))
-            }.into_iter().collect()
-        }
+    let results = if get_pwd!().join(query).is_file() {
+        vec![Path::new(query)]
+    } else {
+        match utils::file_query(config, query) {
+            Ok(x) => x,
+            Err(e) => return Err(format!("Error while fetching index: {}", e))
+        }.into_iter().collect()
     };
 
     if results.len() < 1 {
@@ -256,39 +269,30 @@ pub struct Configuration {
 }
 
 impl Configuration {
-    pub fn from_env(env: Vec<(String, String)>) -> Result<Configuration, String> {
-        let mut dict = HashMap::new();
-        dict.extend(env.into_iter().filter(|&(_, ref v)| v.len() > 0));
+    pub fn new() -> Result<Configuration, String> {
         Ok(Configuration {
-            index_path: match dict.remove("MATES_INDEX") {
+            index_path: match get_envvar("MATES_INDEX") {
                 Some(x) => Path::new(x),
-                None => match dict.get("HOME") {
-                    Some(home) => {
-                        os::make_absolute(&Path::new(home).join(".mates_index")).unwrap()
-                    },
+                None => match get_envvar("HOME") {
+                    Some(home) => get_pwd!().join(home).join(".mates_index"),
                     None => return Err("Unable to determine user's home directory.".to_owned())
                 }
             },
-            vdir_path: match dict.remove("MATES_DIR") {
+            vdir_path: match get_envvar("MATES_DIR") {
                 Some(x) => Path::new(x),
                 None => return Err("MATES_DIR must be set to your vdir path (directory of vcf-files).".to_owned())
             },
-            editor_cmd: match dict.remove("MATES_EDITOR") {
+            editor_cmd: match get_envvar("MATES_EDITOR") {
                 Some(x) => x,
-                None => match dict.remove("EDITOR") {
+                None => match get_envvar("EDITOR") {
                     Some(x) => x,
                     None => return Err("MATES_EDITOR or EDITOR must be set.".to_owned())
                 }
             },
-            grep_cmd: match dict.remove("MATES_GREP") {
+            grep_cmd: match get_envvar("MATES_GREP") {
                 Some(x) => x,
                 None => "grep".to_owned()
             }
         })
     }
-
-    pub fn new() -> Result<Configuration, String> {
-        Configuration::from_env(os::env())
-    }
 }
-

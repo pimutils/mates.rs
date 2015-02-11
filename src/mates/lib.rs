@@ -1,5 +1,4 @@
-#![feature(collections,core,io,os,path)]
-extern crate getopts;
+#![feature(env,core,io,os,path)]
 extern crate vobject;
 extern crate email;
 extern crate uuid;
