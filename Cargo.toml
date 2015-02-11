@@ -15,7 +15,6 @@ doc = false
 [dependencies]
 uuid = "*"
 atomicwrites = "*"
-getopts = "*"
 
 [dependencies.vobject]
 git = "https://github.com/untitaker/rust-vobject.git"
