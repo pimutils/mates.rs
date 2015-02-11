@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::old_io::fs::PathExtensions;
 use std::borrow::ToOwned;
 
-use atomicwrites::{AtomicFile,AllowOverwrite};
+use atomicwrites::{GenericAtomicFile,AtomicFile,AllowOverwrite};
 
 use utils;
 
@@ -30,11 +30,11 @@ fn build_index(outfile: &Path, dir: &Path) -> old_io::IoResult<()> {
         });
     };
 
-    let af = AtomicFile::new(outfile, AllowOverwrite, None);
+    let af: AtomicFile = GenericAtomicFile::new(outfile, AllowOverwrite);
     let entries = try!(old_io::fs::readdir(dir));
     let mut errors = false;
 
-    try!(af.write(|&mut: outf| {
+    try!(af.write(|outf| {
         for entry in entries.iter() {
             if !entry.is_file() || !entry.filename_str().unwrap_or("").ends_with(".vcf") {
                 continue;

@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use vobject::{Component,Property,parse_component,write_component};
 use email::rfc5322::Rfc5322Parser;
 use uuid::Uuid;
-use atomicwrites::{AtomicFile,DisallowOverwrite};
+use atomicwrites::{GenericAtomicFile,AtomicFile,DisallowOverwrite};
 
 use cli::Configuration;
 
@@ -92,7 +92,7 @@ impl Contact {
 
     pub fn write_create(&self) -> old_io::IoResult<()> {
         let string = write_component(&self.component);
-        let af = AtomicFile::new(&self.path, DisallowOverwrite, None);
+        let af: AtomicFile = GenericAtomicFile::new(&self.path, DisallowOverwrite);
 
         af.write(|&: f| {
             f.write_str(string.as_slice())
