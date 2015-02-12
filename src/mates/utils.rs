@@ -80,7 +80,7 @@ impl Contact {
             let mut contact_path;
             loop {
                 uid = Uuid::new_v4().to_simple_string();
-                contact_path = dir.join(Path::new(format!("{}.vcf", uid)));
+                contact_path = dir.join(format!("{}.vcf", uid));
                 if !contact_path.exists() {
                     break
                 }
