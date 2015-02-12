@@ -291,7 +291,7 @@ impl Configuration {
             },
             grep_cmd: match get_envvar("MATES_GREP") {
                 Some(x) => x,
-                None => "grep".to_owned()
+                None => "grep -i".to_owned()
             }
         })
     }

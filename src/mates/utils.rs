@@ -118,7 +118,7 @@ fn generate_component(uid: String, fullname: Option<&str>, email: Option<&str>) 
 }
 
 pub fn index_query<'a>(config: &Configuration, query: &str) -> old_io::IoResult<IndexIterator<'a>> {
-    let mut process = try!(old_io::Command::new(config.grep_cmd.as_slice())
+    let mut process = try!(command_from_config(config.grep_cmd.as_slice())
         .arg(query.as_slice())
         .stderr(old_io::process::InheritFd(2))
         .spawn());
@@ -211,4 +211,14 @@ pub fn add_contact_from_email(contact_dir: &Path, email_input: &str) -> old_io::
     let contact = Contact::generate(fullname, email, contact_dir);
     try!(contact.write_create());
     Ok(contact)
+}
+
+
+fn command_from_config(config_val: &str) -> old_io::process::Command {
+    let mut parts = config_val.split(' ');
+    let main = parts.next().unwrap();
+    let rest: Vec<_> = parts.map(|x| x.to_string()).collect();
+    old_io::process::Command::new(main)
+        .args(rest.as_slice())
+        .clone()
 }
