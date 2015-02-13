@@ -188,7 +188,7 @@ pub fn read_sender_from_email(email: &str) -> Option<String> {
         match parser.consume_header() {
             Some(header) => {
                 if header.name == "From" {
-                    return header.get_value()
+                    return header.get_value().ok()
                 };
             },
             None => return None

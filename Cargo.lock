@@ -18,24 +18,24 @@ name = "chrono"
 version = "0.1.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "time 0.1.16 (registry+https://github.com/rust-lang/crates.io-index)",
+ "time 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "email"
 version = "0.0.8"
-source = "git+https://github.com/untitaker/rust-email.git?branch=results#bb1df8b3eb6fed13605e246a9d6c32d5db7c0e65"
+source = "git+https://github.com/untitaker/rust-email.git?branch=results#d5fb7fe031564d9c9aae075cb1ccda9fe32a79d8"
 dependencies = [
  "chrono 0.1.18 (registry+https://github.com/rust-lang/crates.io-index)",
- "encoding 0.2.22 (registry+https://github.com/rust-lang/crates.io-index)",
+ "encoding 0.2.23 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.2.12 (registry+https://github.com/rust-lang/crates.io-index)",
- "time 0.1.16 (registry+https://github.com/rust-lang/crates.io-index)",
+ "time 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "encoding"
-version = "0.2.22"
+version = "0.2.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "encoding-index-japanese 1.20141219.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -107,7 +107,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "peg"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -117,7 +117,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "time"
-version = "0.1.16"
+version = "0.1.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "gcc 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -137,6 +137,6 @@ name = "vobject"
 version = "0.0.1"
 source = "git+https://github.com/untitaker/rust-vobject.git#9013376a8741fcac22e045442cdcaccbf7f22ad7"
 dependencies = [
- "peg 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "peg 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

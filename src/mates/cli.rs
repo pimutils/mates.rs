@@ -30,7 +30,7 @@ macro_rules! get_pwd {
 }
 
 fn get_envvar(key: &str) -> Option<String> {
-    match env::var_string(key) {
+    match env::var(key) {
         Ok(x) => Some(x),
         Err(e) => match e {
             env::VarError::NotPresent => None,
@@ -93,7 +93,7 @@ fn build_index(outfile: &Path, dir: &Path) -> old_io::IoResult<()> {
 }
 
 pub fn cli_main() {
-    let mut args = env::args().map(|a| a.into_string().unwrap());
+    let mut args = env::args();
     let program = args.next().unwrap_or("mates".to_string());
 
     let help = format!("Usage: {} COMMAND
@@ -159,7 +159,8 @@ Commands:
             main_try!(email_query(&config, query.as_slice()), "Failed to execute grep");
         },
         "add" => {
-            let email = main_try!(old_io::stdin().lock().read_to_string(), "Failed to read email");
+            let mut stdin = old_io::stdin();
+            let email = main_try!(stdin.lock().read_to_string(), "Failed to read email");
             let contact = main_try!(utils::add_contact_from_email(
                 &config.vdir_path,
                 email.as_slice()
