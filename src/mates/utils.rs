@@ -9,6 +9,19 @@ use atomicwrites::{GenericAtomicFile,AtomicFile,DisallowOverwrite};
 
 use cli::Configuration;
 
+pub fn handle_process(process: &mut old_io::process::Process) -> old_io::IoResult<()> {
+    let exitcode = try!(process.wait());
+    if !exitcode.success() {
+        return Err(old_io::IoError {
+            kind: old_io::OtherIoError,
+            desc: "",
+            detail: Some(format!("{}", exitcode))
+        });
+    };
+    Ok(())
+}
+
+
 struct IndexIterator {
     linebuffer: Vec<String>
 }
@@ -118,10 +131,12 @@ fn generate_component(uid: String, fullname: Option<&str>, email: Option<&str>) 
 }
 
 pub fn index_query<'a>(config: &Configuration, query: &str) -> old_io::IoResult<IndexIterator> {
-    let mut process = try!(command_from_config(config.grep_cmd.as_slice())
+    let mut process = try!(
+        command_from_config(config.grep_cmd.as_slice())
         .arg(query.as_slice())
         .stderr(old_io::process::InheritFd(2))
-        .spawn());
+        .spawn()
+    );
 
     {
         let mut index_fp = try!(old_io::File::open(&config.index_path));
@@ -129,14 +144,7 @@ pub fn index_query<'a>(config: &Configuration, query: &str) -> old_io::IoResult<
         try!(stdin.write_str(try!(index_fp.read_to_string()).as_slice()));
     }
 
-    let exitcode = try!(process.wait());
-    if !exitcode.success() {
-        return Err(old_io::IoError {
-            kind: old_io::OtherIoError,
-            desc: "",
-            detail: Some(format!("{}", exitcode))
-        });
-    };
+    try!(handle_process(&mut process));
 
     let stream = match process.stdout.as_mut() {
         Some(x) => x,
