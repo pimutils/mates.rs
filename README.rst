@@ -105,17 +105,25 @@ it in the folder view will add it to your contacts and open the new contact in
 your editor. If you clear the file, the new contact will be deleted.
 
 
-Selecta (and similar)
----------------------
+Using fuzzy finders for email selection
+---------------------------------------
 
-selecta_ is a fuzzy text selector that can be used instead of grep to search
-for contacts::
+selecta_ and fzf_ are tools that can be used instead of grep to search for
+contacts::
 
     m() {
         mutt "$(MATES_GREP=selecta mates email-query)"
     }
 
+    m() {
+        mutt "$(MATES_GREP='fzf -q' mates email-query)"
+    }
+
+Selecta is much more lightweight than fzf, but fzf provides a nicer interface
+on the other hand.
+
 .. _selecta: https://github.com/garybernhardt/selecta
+.. _fzf: https://github.com/junegunn/fzf
 
 .. _vdirsyncer-integration:
 
