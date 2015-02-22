@@ -12,7 +12,7 @@ macro_rules! main_try {
         match $result {
             Ok(m) => m,
             Err(e) => {
-                println!("{}: {}", $errmsg, e);
+                writeln!(&mut old_io::stdio::stderr(), "{}: {}", $errmsg, e).unwrap();
                 env::set_exit_status(1);
                 return;
             }

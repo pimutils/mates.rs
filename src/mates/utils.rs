@@ -129,6 +129,15 @@ pub fn index_query<'a>(config: &Configuration, query: &str) -> old_io::IoResult<
         try!(stdin.write_str(try!(index_fp.read_to_string()).as_slice()));
     }
 
+    let exitcode = try!(process.wait());
+    if !exitcode.success() {
+        return Err(old_io::IoError {
+            kind: old_io::OtherIoError,
+            desc: "non-zero exit code",
+            detail: Some(format!("grep process failed with errorcode {}", exitcode))
+        });
+    };
+
     let stream = match process.stdout.as_mut() {
         Some(x) => x,
         None => return Err(old_io::IoError {
