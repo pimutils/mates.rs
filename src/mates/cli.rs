@@ -228,6 +228,7 @@ fn edit_contact(config: &Configuration, query: &str) -> old_io::IoResult<()> {
     try!(process.wait());
 
     if try!(old_io::File::open(fpath).read_to_string()).as_slice().trim().len() == 0 {
+        try!(old_io::fs::unlink(fpath));
         return Err(old_io::IoError {
             kind: old_io::OtherIoError,
             desc: "Contact emptied, file removed.",
