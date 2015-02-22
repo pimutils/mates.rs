@@ -134,7 +134,7 @@ pub fn index_query<'a>(config: &Configuration, query: &str) -> old_io::IoResult<
         return Err(old_io::IoError {
             kind: old_io::OtherIoError,
             desc: "non-zero exit code",
-            detail: Some(format!("grep process failed with errorcode {}", exitcode))
+            detail: Some(format!("{}", exitcode))
         });
     };
 
