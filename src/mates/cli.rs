@@ -1,8 +1,13 @@
 use std::os;
+use std::fs;
+use std::fs::PathExt;
+use std::io;
+use std::io::{Read,Write};
+use std::process;
+use std::path;
 use std::env;
-use std::old_io;
-use std::old_io::fs::PathExtensions;
 use std::borrow::ToOwned;
+use std::ffi::AsOsStr;
 
 use atomicwrites::{GenericAtomicFile,AtomicFile,AllowOverwrite};
 
@@ -13,8 +18,8 @@ macro_rules! main_try {
         match $result {
             Ok(m) => m,
             Err(e) => {
-                if e.desc.len() > 0 {
-                    writeln!(&mut old_io::stdio::stderr(), "{}: {}", $errmsg, e).unwrap();
+                if e.description().len() > 0 {
+                    writeln!(&mut io::stderr(), "{}: {}", $errmsg, e).unwrap();
                 };
                 env::set_exit_status(1);
                 return;
@@ -23,9 +28,9 @@ macro_rules! main_try {
     )
 }
 
-fn get_pwd() -> Path {
+fn get_pwd() -> path::PathBuf {
     match os::getcwd() {
-        Ok(x) => x,
+        Ok(x) => path::PathBuf::new(x.as_os_str()),
         Err(e) => panic!(format!("Failed to get current working directory: {}", e))
     }
 }
@@ -40,29 +45,42 @@ fn get_envvar(key: &str) -> Option<String> {
     }
 }
 
-fn build_index(outfile: &Path, dir: &Path) -> old_io::IoResult<()> {
+fn build_index(outfile: &path::Path, dir: &path::Path) -> io::Result<()> {
     if !dir.is_dir() {
-        return Err(old_io::IoError {
-            kind: old_io::MismatchedFileTypeForOperation,
-            desc: "MATES_DIR must be a directory.",
-            detail: None
-        });
+        return Err(io::Error::new(
+            io::ErrorKind::MismatchedFileTypeForOperation,
+            "MATES_DIR must be a directory.",
+            None
+        ));
     };
 
     let af: AtomicFile = GenericAtomicFile::new(outfile, AllowOverwrite);
-    let entries = try!(old_io::fs::readdir(dir));
     let mut errors = false;
 
     try!(af.write(|outf| {
-        for entry in entries.iter() {
-            if !entry.is_file() || !entry.filename_str().unwrap_or("").ends_with(".vcf") {
+        for entry in try!(fs::read_dir(dir)) {
+            let entry = match entry {
+                Ok(x) => x,
+                Err(e) => {
+                    println!("Error while listing directory: {}", e);
+                    errors = true;
+                    continue;
+                }
+            };
+
+            let pathbuf = entry.path();
+
+            if !(*pathbuf).is_file() || match pathbuf.extension() {
+                Some(x) => x.to_str().unwrap_or("") != ".vcf",
+                None => false
+            } {
                 continue;
             }
 
-            let contact = match utils::Contact::from_file(entry.clone()) {
+            let contact = match utils::Contact::from_file(&pathbuf) {
                 Ok(x) => x,
                 Err(e) => {
-                    println!("Error while reading {}: {}", entry.display(), e);
+                    println!("Error while reading {}: {}", pathbuf.display(), e);
                     errors = true;
                     continue
                 }
@@ -70,10 +88,10 @@ fn build_index(outfile: &Path, dir: &Path) -> old_io::IoResult<()> {
 
             match utils::index_item_from_contact(&contact) {
                 Ok(index_string) => {
-                    try!(outf.write_str(index_string.as_slice()));
+                    try!(outf.write_all(index_string.as_bytes()));
                 },
                 Err(e) => {
-                    println!("Error while indexing {}: {}", entry.display(), e);
+                    println!("Error while indexing {}: {}", pathbuf.display(), e);
                     errors = true;
                     continue
                 }
@@ -83,11 +101,11 @@ fn build_index(outfile: &Path, dir: &Path) -> old_io::IoResult<()> {
     }));
 
     if errors {
-        Err(old_io::IoError {
-            kind: old_io::OtherIoError,
-            desc: "Several errors happened while generating the index.",
-            detail: None
-        })
+        Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Several errors happened while generating the index.",
+            None
+        ))
     } else {
         Ok(())
     }
@@ -160,23 +178,25 @@ Commands:
             main_try!(email_query(&config, query.as_slice()), "Failed to execute grep");
         },
         "add" => {
-            let mut stdin = old_io::stdin();
-            let email = main_try!(stdin.lock().read_to_string(), "Failed to read email");
+            let stdin = io::stdin();
+            let mut email = String::new();
+            main_try!(stdin.lock().read_to_string(&mut email), "Failed to read email");
             let contact = main_try!(utils::add_contact_from_email(
                 &config.vdir_path,
                 email.as_slice()
             ), "Failed to add contact");
             println!("{}", contact.path.display());
 
-            let mut index_fp = main_try!(old_io::File::open_mode(
-                &config.index_path,
-                old_io::Append,
-                old_io::Write),
+            let mut index_fp = main_try!(
+                fs::OpenOptions::new()
+                .append(true)
+                .write(true)
+                .open(&config.index_path),
                 "Failed to open index"
             );
 
             let index_entry = main_try!(utils::index_item_from_contact(&contact), "Failed to generate index");
-            main_try!(index_fp.write_str(index_entry.as_slice()), "Failed to write to index");
+            main_try!(index_fp.write_all(index_entry.as_bytes()), "Failed to write to index");
         },
         "edit" => {
             let query = args.next().unwrap_or("".to_string());
@@ -190,55 +210,62 @@ Commands:
     };
 }
 
-fn edit_contact(config: &Configuration, query: &str) -> old_io::IoResult<()> {
+fn edit_contact(config: &Configuration, query: &str) -> io::Result<()> {
     let results = if get_pwd().join(query).is_file() {
-        vec![Path::new(query)]
+        vec![path::PathBuf::new(query)]
     } else {
         try!(utils::file_query(config, query)).into_iter().collect()
     };
 
     if results.len() < 1 {
-        return Err(old_io::IoError {
-            kind: old_io::OtherIoError,
-            desc: "No such contact.",
-            detail: None
-        })
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "No such contact.",
+            None
+        ))
     } else if results.len() > 1 {
-        return Err(old_io::IoError {
-            kind: old_io::OtherIoError,
-            desc: "Ambiguous query.",
-            detail: None
-        })
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Ambiguous query.",
+            None
+        ))
     }
 
     let fpath = &results[0];
-    let mut process = try!(old_io::Command::new("sh")
+    let mut process = try!(process::Command::new("sh")
         .arg("-c")
         // clear stdin, http://unix.stackexchange.com/a/77593
-        .arg(format!("$0 -- \"$1\" < $2"))
+        .arg(format!("$0 -- \"$1\" < $2").as_slice())
         .arg(config.editor_cmd.as_slice())
-        .arg(fpath.as_str().unwrap())
+        .arg(fpath.as_os_str())
         .arg("/dev/tty")
-        .stdin(old_io::process::InheritFd(0))
-        .stdout(old_io::process::InheritFd(1))
-        .stderr(old_io::process::InheritFd(2))
+        .stdin(process::Stdio::inherit())
+        .stdout(process::Stdio::inherit())
+        .stderr(process::Stdio::inherit())
         .spawn());
 
     try!(utils::handle_process(&mut process));
 
-    if try!(old_io::File::open(fpath).read_to_string()).as_slice().trim().len() == 0 {
-        try!(old_io::fs::unlink(fpath));
-        return Err(old_io::IoError {
-            kind: old_io::OtherIoError,
-            desc: "Contact emptied, file removed.",
-            detail: None
-        });
+    let fcontent = {
+        let mut fcontent = String::new();
+        let mut file = try!(fs::File::open(fpath));
+        try!(file.read_to_string(&mut fcontent));
+        fcontent
+    };
+
+    if fcontent.as_slice().trim().len() == 0 {
+        try!(fs::remove_file(fpath));
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "Contact emptied, file removed.",
+            None
+        ));
     };
 
     Ok(())
 }
 
-fn mutt_query<'a>(config: &Configuration, query: &str) -> old_io::IoResult<()> {
+fn mutt_query<'a>(config: &Configuration, query: &str) -> io::Result<()> {
     println!("");  // For some reason mutt requires an empty line
     for item in try!(utils::index_query(config, query)) {
         if item.email.len() > 0 && item.name.len() > 0 {
@@ -248,14 +275,14 @@ fn mutt_query<'a>(config: &Configuration, query: &str) -> old_io::IoResult<()> {
     Ok(())
 }
 
-fn file_query<'a>(config: &Configuration, query: &str) -> old_io::IoResult<()> {
+fn file_query<'a>(config: &Configuration, query: &str) -> io::Result<()> {
     for path in try!(utils::file_query(config, query)).iter() {
         println!("{}", path.display());
     };
     Ok(())
 }
 
-fn email_query<'a>(config: &Configuration, query: &str) -> old_io::IoResult<()> {
+fn email_query<'a>(config: &Configuration, query: &str) -> io::Result<()> {
     for item in try!(utils::index_query(config, query)) {
         if item.name.len() > 0 && item.email.len() > 0 {
             println!("{} <{}>", item.name, item.email);
@@ -265,8 +292,8 @@ fn email_query<'a>(config: &Configuration, query: &str) -> old_io::IoResult<()> 
 }
 
 pub struct Configuration {
-    pub index_path: Path,
-    pub vdir_path: Path,
+    pub index_path: path::PathBuf,
+    pub vdir_path: path::PathBuf,
     pub editor_cmd: String,
     pub grep_cmd: String
 }
@@ -275,14 +302,14 @@ impl Configuration {
     pub fn new() -> Result<Configuration, String> {
         Ok(Configuration {
             index_path: match get_envvar("MATES_INDEX") {
-                Some(x) => Path::new(x),
+                Some(x) => path::PathBuf::new(&x),
                 None => match get_envvar("HOME") {
-                    Some(home) => get_pwd().join(home).join(".mates_index"),
+                    Some(home) => get_pwd().join(&home).join(".mates_index"),
                     None => return Err("Unable to determine user's home directory.".to_owned())
                 }
             },
             vdir_path: match get_envvar("MATES_DIR") {
-                Some(x) => Path::new(x),
+                Some(x) => path::PathBuf::new(&x),
                 None => return Err("MATES_DIR must be set to your vdir path (directory of vcf-files).".to_owned())
             },
             editor_cmd: match get_envvar("MATES_EDITOR") {
