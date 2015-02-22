@@ -9,12 +9,12 @@ use atomicwrites::{GenericAtomicFile,AtomicFile,DisallowOverwrite};
 
 use cli::Configuration;
 
-struct IndexIterator<'a> {
+struct IndexIterator {
     linebuffer: Vec<String>
 }
 
-impl<'a> IndexIterator<'a> {
-    fn new(output: &String) -> IndexIterator<'a> {
+impl IndexIterator {
+    fn new(output: &String) -> IndexIterator {
         let rv = output.split('\n').map(|x| x.to_string()).collect();
         IndexIterator {
             linebuffer: rv
@@ -22,10 +22,10 @@ impl<'a> IndexIterator<'a> {
     }
 }
 
-impl<'a> Iterator for IndexIterator<'a> {
-    type Item = IndexItem<'a>;
+impl Iterator for IndexIterator {
+    type Item = IndexItem;
 
-    fn next(&mut self) -> Option<IndexItem<'a>> {
+    fn next(&mut self) -> Option<IndexItem> {
         match self.linebuffer.pop() {
             Some(x) => Some(IndexItem::new(x)),
             None => None
@@ -33,14 +33,14 @@ impl<'a> Iterator for IndexIterator<'a> {
     }
 }
 
-struct IndexItem<'a> {
+struct IndexItem {
     pub email: String,
     pub name: String,
     pub filepath: Option<Path>
 }
 
-impl<'a> IndexItem<'a> {
-    fn new(line: String) -> IndexItem<'a> {
+impl IndexItem {
+    fn new(line: String) -> IndexItem {
         let mut parts = line.split('\t');
 
         IndexItem {
@@ -117,7 +117,7 @@ fn generate_component(uid: String, fullname: Option<&str>, email: Option<&str>) 
     comp
 }
 
-pub fn index_query<'a>(config: &Configuration, query: &str) -> old_io::IoResult<IndexIterator<'a>> {
+pub fn index_query<'a>(config: &Configuration, query: &str) -> old_io::IoResult<IndexIterator> {
     let mut process = try!(command_from_config(config.grep_cmd.as_slice())
         .arg(query.as_slice())
         .stderr(old_io::process::InheritFd(2))

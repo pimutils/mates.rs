@@ -15,10 +15,7 @@ doc = false
 [dependencies]
 uuid = "*"
 atomicwrites = "*"
+email = "*"
 
 [dependencies.vobject]
 git = "https://github.com/untitaker/rust-vobject.git"
-
-[dependencies.email]
-git = "https://github.com/untitaker/rust-email.git"
-branch = "results"

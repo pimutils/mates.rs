@@ -3,8 +3,8 @@ name = "mates"
 version = "0.0.1"
 dependencies = [
  "atomicwrites 0.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "email 0.0.8 (git+https://github.com/untitaker/rust-email.git?branch=results)",
- "uuid 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "email 0.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "uuid 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "vobject 0.0.1 (git+https://github.com/untitaker/rust-vobject.git)",
 ]
 
@@ -15,7 +15,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "chrono"
-version = "0.1.18"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "time 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -23,20 +23,20 @@ dependencies = [
 
 [[package]]
 name = "email"
-version = "0.0.8"
-source = "git+https://github.com/untitaker/rust-email.git?branch=results#367065d3b8070df34d7c77f7920579a7a293cae8"
+version = "0.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "chrono 0.1.18 (registry+https://github.com/rust-lang/crates.io-index)",
- "encoding 0.2.23 (registry+https://github.com/rust-lang/crates.io-index)",
+ "chrono 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "encoding 0.2.24 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "encoding"
-version = "0.2.23"
+version = "0.2.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "encoding-index-japanese 1.20141219.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -118,7 +118,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "rand"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "libc 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -127,7 +127,7 @@ dependencies = [
 
 [[package]]
 name = "rustc-serialize"
-version = "0.2.14"
+version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -141,10 +141,11 @@ dependencies = [
 
 [[package]]
 name = "uuid"
-version = "0.1.9"
+version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "rustc-serialize 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
