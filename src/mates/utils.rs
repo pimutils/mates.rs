@@ -133,7 +133,7 @@ pub fn index_query<'a>(config: &Configuration, query: &str) -> old_io::IoResult<
     if !exitcode.success() {
         return Err(old_io::IoError {
             kind: old_io::OtherIoError,
-            desc: "non-zero exit code",
+            desc: "",
             detail: Some(format!("{}", exitcode))
         });
     };

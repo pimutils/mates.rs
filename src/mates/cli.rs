@@ -12,7 +12,9 @@ macro_rules! main_try {
         match $result {
             Ok(m) => m,
             Err(e) => {
-                writeln!(&mut old_io::stdio::stderr(), "{}: {}", $errmsg, e).unwrap();
+                if e.desc.len() > 0 {
+                    writeln!(&mut old_io::stdio::stderr(), "{}: {}", $errmsg, e).unwrap();
+                };
                 env::set_exit_status(1);
                 return;
             }
@@ -189,24 +191,29 @@ Commands:
     };
 }
 
-fn edit_contact(config: &Configuration, query: &str) -> Result<(), String> {
+fn edit_contact(config: &Configuration, query: &str) -> old_io::IoResult<()> {
     let results = if get_pwd!().join(query).is_file() {
         vec![Path::new(query)]
     } else {
-        match utils::file_query(config, query) {
-            Ok(x) => x,
-            Err(e) => return Err(format!("Error while fetching index: {}", e))
-        }.into_iter().collect()
+        try!(utils::file_query(config, query)).into_iter().collect()
     };
 
     if results.len() < 1 {
-        return Err("No such contact.".to_string());
+        return Err(old_io::IoError {
+            kind: old_io::OtherIoError,
+            desc: "No such contact.",
+            detail: None
+        })
     } else if results.len() > 1 {
-        return Err("Ambiguous query.".to_string());
+        return Err(old_io::IoError {
+            kind: old_io::OtherIoError,
+            desc: "Ambiguous query.",
+            detail: None
+        })
     }
 
     let fpath = &results[0];
-    let mut process = match old_io::Command::new("sh")
+    let mut process = try!(old_io::Command::new("sh")
         .arg("-c")
         // clear stdin, http://unix.stackexchange.com/a/77593
         .arg(format!("$0 -- \"$1\" < $2"))
@@ -216,21 +223,16 @@ fn edit_contact(config: &Configuration, query: &str) -> Result<(), String> {
         .stdin(old_io::process::InheritFd(0))
         .stdout(old_io::process::InheritFd(1))
         .stderr(old_io::process::InheritFd(2))
-        .spawn() {
-            Ok(x) => x,
-            Err(e) => return Err(format!("Error while invoking editor: {}", e))
-        };
+        .spawn());
 
-    match process.wait() {
-        Ok(_) => (),
-        Err(e) => return Err(format!("Error while invoking editor: {}", e))
-    };
+    try!(process.wait());
 
-    if match old_io::File::open(fpath).read_to_string() {
-        Ok(x) => x,
-        Err(e) => return Err(format!("File can't be read after user edited it: {}", e))
-    }.as_slice().trim().len() == 0 {
-        return Err(format!("Contact emptied, file removed."));
+    if try!(old_io::File::open(fpath).read_to_string()).as_slice().trim().len() == 0 {
+        return Err(old_io::IoError {
+            kind: old_io::OtherIoError,
+            desc: "Contact emptied, file removed.",
+            detail: None
+        });
     };
 
     Ok(())
