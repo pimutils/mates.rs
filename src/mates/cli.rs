@@ -1,3 +1,4 @@
+use std::os;
 use std::env;
 use std::old_io;
 use std::old_io::fs::PathExtensions;
@@ -22,13 +23,11 @@ macro_rules! main_try {
     )
 }
 
-macro_rules! get_pwd {
-    () => (
-        match env::current_dir() {
-            Ok(x) => x,
-            Err(e) => panic!(format!("Failed to get current working directory: {}", e))
-        }
-    )
+fn get_pwd() -> Path {
+    match os::getcwd() {
+        Ok(x) => x,
+        Err(e) => panic!(format!("Failed to get current working directory: {}", e))
+    }
 }
 
 fn get_envvar(key: &str) -> Option<String> {
@@ -192,7 +191,7 @@ Commands:
 }
 
 fn edit_contact(config: &Configuration, query: &str) -> old_io::IoResult<()> {
-    let results = if get_pwd!().join(query).is_file() {
+    let results = if get_pwd().join(query).is_file() {
         vec![Path::new(query)]
     } else {
         try!(utils::file_query(config, query)).into_iter().collect()
@@ -278,7 +277,7 @@ impl Configuration {
             index_path: match get_envvar("MATES_INDEX") {
                 Some(x) => Path::new(x),
                 None => match get_envvar("HOME") {
-                    Some(home) => get_pwd!().join(home).join(".mates_index"),
+                    Some(home) => get_pwd().join(home).join(".mates_index"),
                     None => return Err("Unable to determine user's home directory.".to_owned())
                 }
             },
