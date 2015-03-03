@@ -1,4 +1,4 @@
-#![feature(env,os,old_io,old_path,core)]
+#![feature(exit_status,os,old_io,old_path,core)]
 extern crate vobject;
 extern crate email;
 extern crate uuid;

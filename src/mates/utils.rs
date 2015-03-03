@@ -107,7 +107,7 @@ impl Contact {
         let string = write_component(&self.component);
         let af: AtomicFile = GenericAtomicFile::new(&self.path, DisallowOverwrite);
 
-        af.write(|&: f| {
+        af.write(|f| {
             f.write_str(string.as_slice())
         })
     }

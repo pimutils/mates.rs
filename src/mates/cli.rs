@@ -115,7 +115,7 @@ Commands:
         for editors and most interactive programs to not act weird when piped to.",
         program);
 
-    let print_help = |&:| {
+    let print_help = || {
         println!("{}", help);
     };
 
