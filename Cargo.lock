@@ -15,7 +15,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "chrono"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "time 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -26,29 +26,29 @@ name = "email"
 version = "0.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "chrono 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "encoding 0.2.24 (registry+https://github.com/rust-lang/crates.io-index)",
- "lazy_static 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "chrono 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "encoding 0.2.25 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "encoding"
-version = "0.2.24"
+version = "0.2.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "encoding-index-japanese 1.20141219.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "encoding-index-japanese 1.20141219.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "encoding-index-korean 1.20141219.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "encoding-index-simpchinese 1.20141219.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "encoding-index-singlebyte 1.20141219.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "encoding-index-tradchinese 1.20141219.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "encoding-index-tradchinese 1.20141219.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "encoding-index-japanese"
-version = "1.20141219.1"
+version = "1.20141219.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "encoding_index_tests 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -80,7 +80,7 @@ dependencies = [
 
 [[package]]
 name = "encoding-index-tradchinese"
-version = "1.20141219.1"
+version = "1.20141219.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "encoding_index_tests 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -98,7 +98,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "lazy_static"
-version = "0.1.7"
+version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -113,12 +113,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "peg"
-version = "0.1.8"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "rand"
-version = "0.1.3"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "libc 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -132,7 +132,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "rustc-serialize"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -149,15 +149,15 @@ name = "uuid"
 version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "rand 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "vobject"
 version = "0.0.1"
-source = "git+https://github.com/untitaker/rust-vobject.git#9013376a8741fcac22e045442cdcaccbf7f22ad7"
+source = "git+https://github.com/untitaker/rust-vobject.git#72a62476f1e9177ae54683c8397bb4dc95a1c47c"
 dependencies = [
- "peg 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "peg 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
