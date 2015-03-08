@@ -1,6 +1,13 @@
-use std::old_io;
-use std::old_io::fs::PathExtensions;
+use std::io;
+use std::io::{Read,Write};
+use std::path;
+use std::path::AsPath;
+use std::fs;
+use std::fs::PathExt;
+use std::process;
 use std::collections::HashSet;
+use std::borrow::ToOwned;
+use std::ffi::AsOsStr;
 
 use vobject::{Component,Property,parse_component,write_component};
 use email::rfc5322::Rfc5322Parser;
@@ -9,14 +16,14 @@ use atomicwrites::{GenericAtomicFile,AtomicFile,DisallowOverwrite};
 
 use cli::Configuration;
 
-pub fn handle_process(process: &mut old_io::process::Process) -> old_io::IoResult<()> {
+pub fn handle_process(process: &mut process::Child) -> io::Result<()> {
     let exitcode = try!(process.wait());
     if !exitcode.success() {
-        return Err(old_io::IoError {
-            kind: old_io::OtherIoError,
-            desc: "",
-            detail: Some(format!("{}", exitcode))
-        });
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "",
+            Some(format!("{}", exitcode))
+        ));
     };
     Ok(())
 }
@@ -49,7 +56,7 @@ impl Iterator for IndexIterator {
 struct IndexItem {
     pub email: String,
     pub name: String,
-    pub filepath: Option<Path>
+    pub filepath: Option<path::PathBuf>
 }
 
 impl IndexItem {
@@ -60,7 +67,7 @@ impl IndexItem {
             email: parts.next().unwrap_or("").to_string(),
             name: parts.next().unwrap_or("").to_string(),
             filepath: match parts.next() {
-                Some(x) => Some(Path::new(x)),
+                Some(x) => Some(path::PathBuf::new(x)),
                 None => None
             }
         }
@@ -69,32 +76,39 @@ impl IndexItem {
 
 pub struct Contact {
     pub component: Component,
-    pub path: Path
+    pub path: path::PathBuf
 }
 
 impl Contact {
-    pub fn from_file(path: Path) -> old_io::IoResult<Contact> {
-        let mut contact_file = try!(old_io::File::open(&path));
-        let contact_string = try!(contact_file.read_to_string());
+    pub fn from_file<P: AsOsStr + path::AsPath + ?Sized>(path: &P) -> io::Result<Contact> {
+        // FIXME: Why is "AsOsStr" above necessary? File::open has a sig w/o it
+        let mut contact_file = try!(fs::File::open(&path));
+        let contact_string = {
+            let mut x = String::new();
+            try!(contact_file.read_to_string(&mut x));
+            x
+        };
+
         let item = match parse_component(contact_string.as_slice()) {
             Ok(x) => x,
-            Err(e) => return Err(old_io::IoError {
-                kind: old_io::OtherIoError,
-                desc: "Error while parsing contact",
-                detail: Some(e)
-            })
+            Err(e) => return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Error while parsing contact",
+                Some(e)
+            ))
         };
-        Ok(Contact { component: item, path: path })
+
+        Ok(Contact { component: item, path: path.as_path().to_owned() })
     }
 
-    pub fn generate(fullname: Option<&str>, email: Option<&str>, dir: &Path) -> Contact {
+    pub fn generate(fullname: Option<&str>, email: Option<&str>, dir: &path::Path) -> Contact {
         let (uid, contact_path) = {
             let mut uid;
             let mut contact_path;
             loop {
                 uid = Uuid::new_v4().to_simple_string();
-                contact_path = dir.join(format!("{}.vcf", uid));
-                if !contact_path.exists() {
+                contact_path = dir.join(&format!("{}.vcf", uid));
+                if !(*contact_path).exists() {
                     break
                 }
             };
@@ -103,12 +117,12 @@ impl Contact {
         Contact { path: contact_path, component: generate_component(uid, fullname, email) }
     }
 
-    pub fn write_create(&self) -> old_io::IoResult<()> {
+    pub fn write_create(&self) -> io::Result<()> {
         let string = write_component(&self.component);
         let af: AtomicFile = GenericAtomicFile::new(&self.path, DisallowOverwrite);
 
         af.write(|f| {
-            f.write_str(string.as_slice())
+            f.write_all(string.as_bytes())
         })
     }
 }
@@ -130,53 +144,55 @@ fn generate_component(uid: String, fullname: Option<&str>, email: Option<&str>) 
     comp
 }
 
-pub fn index_query<'a>(config: &Configuration, query: &str) -> old_io::IoResult<IndexIterator> {
+pub fn index_query<'a>(config: &Configuration, query: &str) -> io::Result<IndexIterator> {
     let mut process = try!(
         command_from_config(config.grep_cmd.as_slice())
         .arg(query.as_slice())
-        .stderr(old_io::process::InheritFd(2))
-        .spawn()
-    );
+        .stderr(process::Stdio::inherit())
+        .spawn());
 
     {
-        let mut index_fp = try!(old_io::File::open(&config.index_path));
+        let mut index_fp = try!(fs::File::open(&config.index_path));
         let mut stdin = process.stdin.take().unwrap();
-        try!(stdin.write_str(try!(index_fp.read_to_string()).as_slice()));
+        let mut line: Vec<u8> = vec![];
+        try!(index_fp.read_to_end(&mut line));
+        try!(stdin.write_all(line.as_slice()));
     }
 
     try!(handle_process(&mut process));
 
     let stream = match process.stdout.as_mut() {
         Some(x) => x,
-        None => return Err(old_io::IoError {
-            kind: old_io::IoUnavailable,
-            desc: "Failed to get stdout from grep process.",
-            detail: None
-        })
+        None => return Err(io::Error::new(
+            io::ErrorKind::ResourceUnavailable,
+            "Failed to get stdout from grep process.",
+            None
+        ))
     };
 
-    let output = try!(stream.read_to_string());
+    let mut output = String::new();
+    try!(stream.read_to_string(&mut output));
     Ok(IndexIterator::new(&output))
 }
 
 /// Better than index_query if you're only interested in the filepath, as duplicate entries will be
 /// removed.
-pub fn file_query(config: &Configuration, query: &str) -> old_io::IoResult<HashSet<Path>> {
-    let mut rv: HashSet<Path> = HashSet::new();
+pub fn file_query(config: &Configuration, query: &str) -> io::Result<HashSet<path::PathBuf>> {
+    let mut rv: HashSet<path::PathBuf> = HashSet::new();
     rv.extend(
         try!(index_query(config, query)).filter_map(|x| x.filepath)
     );
     Ok(rv)
 }
 
-pub fn index_item_from_contact(contact: &Contact) -> old_io::IoResult<String> {
+pub fn index_item_from_contact(contact: &Contact) -> io::Result<String> {
     let name = match contact.component.single_prop("FN") {
         Some(name) => name.value_as_string(),
-        None => return Err(old_io::IoError {
-            kind: old_io::OtherIoError,
-            desc: "No name found.",
-            detail: None
-        })
+        None => return Err(io::Error::new(
+            io::ErrorKind::Other,
+            "No name found.",
+            None
+        ))
     };
 
     let emails = contact.component.all_props("EMAIL");
@@ -215,14 +231,14 @@ pub fn read_sender_from_email(email: &str) -> Option<String> {
 }
 
 /// Write sender from given email as .vcf file to given directory.
-pub fn add_contact_from_email(contact_dir: &Path, email_input: &str) -> old_io::IoResult<Contact> {
+pub fn add_contact_from_email(contact_dir: &path::Path, email_input: &str) -> io::Result<Contact> {
     let from_header = match read_sender_from_email(email_input) {
         Some(x) => x,
-        None => return Err(old_io::IoError {
-            kind: old_io::InvalidInput,
-            desc: "Couldn't find From-header in email.",
-            detail: None
-        })
+        None => return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "Couldn't find From-header in email.",
+            None
+        ))
     };
     let (fullname, email) = parse_from_header(&from_header);
     let contact = Contact::generate(fullname, email, contact_dir);
@@ -231,11 +247,11 @@ pub fn add_contact_from_email(contact_dir: &Path, email_input: &str) -> old_io::
 }
 
 
-fn command_from_config(config_val: &str) -> old_io::process::Command {
+fn command_from_config(config_val: &str) -> process::Command {
     let mut parts = config_val.split(' ');
     let main = parts.next().unwrap();
     let rest: Vec<_> = parts.map(|x| x.to_string()).collect();
-    old_io::process::Command::new(main)
-        .args(rest.as_slice())
-        .clone()
+    let mut rv = process::Command::new(main);
+    rv.args(rest.as_slice());
+    rv
 }
