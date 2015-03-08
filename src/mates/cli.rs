@@ -71,7 +71,7 @@ fn build_index(outfile: &path::Path, dir: &path::Path) -> io::Result<()> {
             let pathbuf = entry.path();
 
             if !(*pathbuf).is_file() || match pathbuf.extension() {
-                Some(x) => x.to_str().unwrap_or("") != ".vcf",
+                Some(x) => x.to_str().unwrap_or("") != "vcf",
                 None => false
             } {
                 continue;
