@@ -1,18 +1,18 @@
-use std::io;
-use std::io::{Read,Write};
-use std::path;
-use std::path::AsPath;
-use std::fs;
-use std::fs::PathExt;
-use std::process;
-use std::collections::HashSet;
 use std::borrow::ToOwned;
+use std::collections::HashSet;
 use std::ffi::AsOsStr;
+use std::fs::PathExt;
+use std::fs;
+use std::io::{Read,Write};
+use std::io;
+use std::path::AsPath;
+use std::path;
+use std::process;
 
-use vobject::{Component,Property,parse_component,write_component};
+use atomicwrites::{GenericAtomicFile,AtomicFile,DisallowOverwrite};
 use email::rfc5322::Rfc5322Parser;
 use uuid::Uuid;
-use atomicwrites::{GenericAtomicFile,AtomicFile,DisallowOverwrite};
+use vobject::{Component,Property,parse_component,write_component};
 
 use cli::Configuration;
 
