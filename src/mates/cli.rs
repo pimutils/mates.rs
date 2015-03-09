@@ -9,7 +9,7 @@ use std::env;
 use std::borrow::ToOwned;
 use std::ffi::AsOsStr;
 
-use atomicwrites::{GenericAtomicFile,AtomicFile,AllowOverwrite};
+use atomicwrites::{AtomicFile,AllowOverwrite};
 
 use utils;
 
@@ -54,7 +54,7 @@ fn build_index(outfile: &path::Path, dir: &path::Path) -> io::Result<()> {
         ));
     };
 
-    let af: AtomicFile = GenericAtomicFile::new(outfile, AllowOverwrite);
+    let af = AtomicFile::new(&outfile, AllowOverwrite);
     let mut errors = false;
 
     try!(af.write(|outf| {

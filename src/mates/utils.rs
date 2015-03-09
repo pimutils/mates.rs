@@ -9,7 +9,7 @@ use std::path::AsPath;
 use std::path;
 use std::process;
 
-use atomicwrites::{GenericAtomicFile,AtomicFile,DisallowOverwrite};
+use atomicwrites::{AtomicFile,DisallowOverwrite};
 use email::rfc5322::Rfc5322Parser;
 use uuid::Uuid;
 use vobject::{Component,Property,parse_component,write_component};
@@ -119,7 +119,7 @@ impl Contact {
 
     pub fn write_create(&self) -> io::Result<()> {
         let string = write_component(&self.component);
-        let af: AtomicFile = GenericAtomicFile::new(&self.path, DisallowOverwrite);
+        let af = AtomicFile::new(&self.path, DisallowOverwrite);
 
         af.write(|f| {
             f.write_all(string.as_bytes())
