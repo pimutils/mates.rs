@@ -94,7 +94,7 @@ impl Contact {
             Err(e) => return Err(io::Error::new(
                 io::ErrorKind::Other,
                 "Error while parsing contact",
-                Some(e)
+                Some(format!("{}", e))
             ))
         };
 

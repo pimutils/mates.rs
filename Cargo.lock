@@ -21,7 +21,7 @@ name = "chrono"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "time 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)",
+ "time 0.1.20 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -34,7 +34,7 @@ dependencies = [
  "lazy_static 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)",
- "time 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)",
+ "time 0.1.20 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -106,7 +106,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "libc"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -116,7 +116,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "peg"
-version = "0.1.9"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -124,7 +124,7 @@ name = "rand"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "libc 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -135,7 +135,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "rustc-serialize"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -148,11 +148,11 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.1.19"
+version = "0.1.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "gcc 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -161,14 +161,14 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "rand 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "vobject"
 version = "0.0.1"
-source = "git+https://github.com/untitaker/rust-vobject.git#72a62476f1e9177ae54683c8397bb4dc95a1c47c"
+source = "git+https://github.com/untitaker/rust-vobject.git#c3b61bef57eb88b98cc2a882569a2c71cc69b9fa"
 dependencies = [
- "peg 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "peg 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
