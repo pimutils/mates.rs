@@ -149,6 +149,7 @@ pub fn index_query<'a>(config: &Configuration, query: &str) -> io::Result<IndexI
         command_from_config(config.grep_cmd.as_slice())
         .arg(query.as_slice())
         .stdin(process::Stdio::piped())
+        .stdout(process::Stdio::piped())
         .stderr(process::Stdio::inherit())
         .spawn());
 
