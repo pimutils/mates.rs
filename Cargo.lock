@@ -145,7 +145,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "rustc-serialize"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -171,13 +171,13 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "rand 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-serialize 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "vobject"
 version = "0.0.1"
-source = "git+https://github.com/untitaker/rust-vobject.git#c3b61bef57eb88b98cc2a882569a2c71cc69b9fa"
+source = "git+https://github.com/untitaker/rust-vobject.git#019a52aa22dd3159e44a4b77eb7924969a9e6c91"
 dependencies = [
  "peg 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
