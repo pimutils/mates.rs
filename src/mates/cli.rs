@@ -235,7 +235,7 @@ fn edit_contact(config: &Configuration, query: &str) -> io::Result<()> {
     let mut process = try!(process::Command::new("sh")
         .arg("-c")
         // clear stdin, http://unix.stackexchange.com/a/77593
-        .arg(format!("$0 -- \"$1\" < $2").as_slice())
+        .arg("$0 \"$1\" < $2")
         .arg(config.editor_cmd.as_slice())
         .arg(fpath.as_os_str())
         .arg("/dev/tty")
