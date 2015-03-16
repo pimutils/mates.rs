@@ -16,10 +16,7 @@ doc = false
 uuid = "*"
 atomicwrites = "*"
 email = "*"
+clap = "*"
 
 [dependencies.vobject]
 git = "https://github.com/untitaker/rust-vobject.git"
-
-[dependencies.clap]
-git = "https://github.com/untitaker/clap-rs.git"
-branch = "args"
