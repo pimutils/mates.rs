@@ -9,6 +9,7 @@ use std::env;
 use std::borrow::ToOwned;
 use std::ffi::AsOsStr;
 
+use clap::{Arg,App,SubCommand};
 use atomicwrites::{AtomicFile,AllowOverwrite};
 
 use utils;
@@ -115,41 +116,41 @@ pub fn cli_main() {
     let mut args = env::args();
     let program = args.next().unwrap_or("mates".to_string());
 
-    let help = format!("Usage: {} COMMAND
-Commands:
-    index:
-        Rewrite/create the index.
-    mutt-query <query>:
-        Search for contact, output is usable for mutt's query_command.
-    file-query <query>:
-        Search for contact, return just the filename.
-    email-query <query>:
-        Search for contact, return \"name <email>\".
-    add:
-        Take mail from stdin, add sender to contacts. Print filename.
-    edit <file-or-query>:
-        Open contact (given by filepath or search-string) in $MATES_EDITOR. If the file is cleared,
-        the contact is removed. As a further convenience it also clears stdin, which is necessary
-        for editors and most interactive programs to not act weird when piped to.",
-        program);
+    let matches = App::new("mates")
+        .version("0.0.1")  // FIXME: Use package metadata
+        .author("Markus Unterwaditzer")
+        .about("A simple commandline addressbook")
+        .subcommand(SubCommand::new("index")
+                    .about("Rewrite/create the index"))
+        .subcommand(SubCommand::new("mutt-query")
+                    .about("Search for contact, output is usable for mutt's query_command.")
+                    .arg(Arg::new("query").required(true).index(1)))
+        .subcommand(SubCommand::new("file-query")
+                    .about("Search for contact, return just the filename.")
+                    .arg(Arg::new("query").required(true).index(1)))
+        .subcommand(SubCommand::new("email-query")
+                    .about("Search for contact, return \"name <email>\".")
+                    .arg(Arg::new("query").required(true).index(1)))
+        .subcommand(SubCommand::new("add")
+                    .about("Take mail from stdin, add sender to contacts. Print filename."))
+        .subcommand(SubCommand::new("edit")
+                    .about(
+                        "Open contact (given by filepath or search-string) in $MATES_EDITOR. If
+                        the file is cleared, the contact is removed. As a further convenience it 
+                        also clears stdin, which is necessary for editors and most interactive 
+                        programs to not act weird when piped to."
+                    )
+                    .arg(Arg::new("file-or-query").required(true).index(1)))
+        .get_matches();
 
-    let print_help = || {
-        println!("{}", help);
-    };
-
-    let command = match args.next() {
+    let command = match matches.subcommand_name() {
         Some(x) => x,
         None => {
-            print_help();
+            println!("Command required. See --help for usage.");
             env::set_exit_status(1);
             return;
         }
     };
-
-    if command == "--help" || command == "help" || command == "-h" {
-        print_help();
-        return;
-    }
 
     let config = match Configuration::new() {
         Ok(x) => x,
@@ -160,21 +161,26 @@ Commands:
         }
     };
 
-    match command.as_slice() {
+    let submatches = matches.subcommand_matches(command).expect("Internal error.");
+
+    match command {
         "index" => {
             println!("Rebuilding index file \"{}\"...", config.index_path.display());
             main_try!(build_index(&config.index_path, &config.vdir_path), "Failed to build index");
         },
         "mutt-query" => {
-            let query = args.next().unwrap_or("".to_string());
+            let query = submatches.value_of("query")
+                .expect("Internal error: query arg should've been required.");
             main_try!(mutt_query(&config, query.as_slice()), "Failed to execute grep");
         },
         "file-query" => {
-            let query = args.next().unwrap_or("".to_string());
+            let query = submatches.value_of("query")
+                .expect("Internal error: query arg should've been required.");
             main_try!(file_query(&config, query.as_slice()), "Failed to execute grep");
         },
         "email-query" => {
-            let query = args.next().unwrap_or("".to_string());
+            let query = submatches.value_of("query")
+                .expect("Internal error: query arg should've been required.");
             main_try!(email_query(&config, query.as_slice()), "Failed to execute grep");
         },
         "add" => {
@@ -199,12 +205,12 @@ Commands:
             main_try!(index_fp.write_all(index_entry.as_bytes()), "Failed to write to index");
         },
         "edit" => {
-            let query = args.next().unwrap_or("".to_string());
+            let query = submatches.value_of("file-or-query")
+                .expect("Internal error: query arg should've been required.");
             main_try!(edit_contact(&config, query.as_slice()), "Failed to edit contact");
         },
         _ => {
             println!("Invalid command: {}", command);
-            print_help();
             env::set_exit_status(1);
         }
     };
