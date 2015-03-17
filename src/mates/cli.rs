@@ -113,9 +113,6 @@ fn build_index(outfile: &path::Path, dir: &path::Path) -> io::Result<()> {
 }
 
 pub fn cli_main() {
-    let mut args = env::args();
-    let program = args.next().unwrap_or("mates".to_string());
-
     let matches = App::new("mates")
         .version("0.0.1")  // FIXME: Use package metadata
         .author("Markus Unterwaditzer")
