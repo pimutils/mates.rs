@@ -1,4 +1,3 @@
-use std::os;
 use std::fs;
 use std::fs::PathExt;
 use std::io;
@@ -7,7 +6,7 @@ use std::process;
 use std::path;
 use std::env;
 use std::borrow::ToOwned;
-use std::ffi::AsOsStr;
+use std::error::Error;
 
 use clap::{Arg,App,SubCommand};
 use atomicwrites::{AtomicFile,AllowOverwrite};
@@ -30,10 +29,7 @@ macro_rules! main_try {
 }
 
 fn get_pwd() -> path::PathBuf {
-    match os::getcwd() {
-        Ok(x) => path::PathBuf::new(x.as_os_str()),
-        Err(e) => panic!(format!("Failed to get current working directory: {}", e))
-    }
+    env::current_dir().ok().expect("Failed to get CWD")
 }
 
 fn get_envvar(key: &str) -> Option<String> {
@@ -49,9 +45,8 @@ fn get_envvar(key: &str) -> Option<String> {
 fn build_index(outfile: &path::Path, dir: &path::Path) -> io::Result<()> {
     if !dir.is_dir() {
         return Err(io::Error::new(
-            io::ErrorKind::MismatchedFileTypeForOperation,
+            io::ErrorKind::InvalidInput,
             "MATES_DIR must be a directory.",
-            None
         ));
     };
 
@@ -105,7 +100,6 @@ fn build_index(outfile: &path::Path, dir: &path::Path) -> io::Result<()> {
         Err(io::Error::new(
             io::ErrorKind::Other,
             "Several errors happened while generating the index.",
-            None
         ))
     } else {
         Ok(())
@@ -168,17 +162,17 @@ pub fn cli_main() {
         "mutt-query" => {
             let query = submatches.value_of("query")
                 .expect("Internal error: query arg should've been required.");
-            main_try!(mutt_query(&config, query.as_slice()), "Failed to execute grep");
+            main_try!(mutt_query(&config, &query[..]), "Failed to execute grep");
         },
         "file-query" => {
             let query = submatches.value_of("query")
                 .expect("Internal error: query arg should've been required.");
-            main_try!(file_query(&config, query.as_slice()), "Failed to execute grep");
+            main_try!(file_query(&config, &query[..]), "Failed to execute grep");
         },
         "email-query" => {
             let query = submatches.value_of("query")
                 .expect("Internal error: query arg should've been required.");
-            main_try!(email_query(&config, query.as_slice()), "Failed to execute grep");
+            main_try!(email_query(&config, &query[..]), "Failed to execute grep");
         },
         "add" => {
             let stdin = io::stdin();
@@ -186,7 +180,7 @@ pub fn cli_main() {
             main_try!(stdin.lock().read_to_string(&mut email), "Failed to read email");
             let contact = main_try!(utils::add_contact_from_email(
                 &config.vdir_path,
-                email.as_slice()
+                &email[..]
             ), "Failed to add contact");
             println!("{}", contact.path.display());
 
@@ -204,7 +198,7 @@ pub fn cli_main() {
         "edit" => {
             let query = submatches.value_of("file-or-query")
                 .expect("Internal error: query arg should've been required.");
-            main_try!(edit_contact(&config, query.as_slice()), "Failed to edit contact");
+            main_try!(edit_contact(&config, &query[..]), "Failed to edit contact");
         },
         _ => {
             println!("Invalid command: {}", command);
@@ -215,7 +209,7 @@ pub fn cli_main() {
 
 fn edit_contact(config: &Configuration, query: &str) -> io::Result<()> {
     let results = if get_pwd().join(query).is_file() {
-        vec![path::PathBuf::new(query)]
+        vec![path::PathBuf::from(query)]
     } else {
         try!(utils::file_query(config, query)).into_iter().collect()
     };
@@ -224,13 +218,11 @@ fn edit_contact(config: &Configuration, query: &str) -> io::Result<()> {
         return Err(io::Error::new(
             io::ErrorKind::Other,
             "No such contact.",
-            None
         ))
     } else if results.len() > 1 {
         return Err(io::Error::new(
             io::ErrorKind::Other,
             "Ambiguous query.",
-            None
         ))
     }
 
@@ -239,7 +231,7 @@ fn edit_contact(config: &Configuration, query: &str) -> io::Result<()> {
         .arg("-c")
         // clear stdin, http://unix.stackexchange.com/a/77593
         .arg("$0 \"$1\" < $2")
-        .arg(config.editor_cmd.as_slice())
+        .arg(&config.editor_cmd[..])
         .arg(fpath.as_os_str())
         .arg("/dev/tty")
         .stdin(process::Stdio::inherit())
@@ -256,12 +248,11 @@ fn edit_contact(config: &Configuration, query: &str) -> io::Result<()> {
         fcontent
     };
 
-    if fcontent.as_slice().trim().len() == 0 {
+    if (&fcontent[..]).trim().len() == 0 {
         try!(fs::remove_file(fpath));
         return Err(io::Error::new(
             io::ErrorKind::Other,
             "Contact emptied, file removed.",
-            None
         ));
     };
 
@@ -305,14 +296,14 @@ impl Configuration {
     pub fn new() -> Result<Configuration, String> {
         Ok(Configuration {
             index_path: match get_envvar("MATES_INDEX") {
-                Some(x) => path::PathBuf::new(&x),
+                Some(x) => path::PathBuf::from(&x),
                 None => match get_envvar("HOME") {
                     Some(home) => get_pwd().join(&home).join(".mates_index"),
                     None => return Err("Unable to determine user's home directory.".to_owned())
                 }
             },
             vdir_path: match get_envvar("MATES_DIR") {
-                Some(x) => path::PathBuf::new(&x),
+                Some(x) => path::PathBuf::from(&x),
                 None => return Err("MATES_DIR must be set to your vdir path (directory of vcf-files).".to_owned())
             },
             editor_cmd: match get_envvar("MATES_EDITOR") {
