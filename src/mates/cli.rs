@@ -15,26 +15,23 @@ use utils;
 use utils::CustomPathExt;
 
 
+#[inline]
 fn get_pwd() -> path::PathBuf {
     env::current_dir().ok().expect("Failed to get CWD")
 }
 
+#[inline]
 fn get_envvar(key: &str) -> Option<String> {
     match env::var(key) {
         Ok(x) => Some(x),
-        Err(e) => match e {
-            env::VarError::NotPresent => None,
-            env::VarError::NotUnicode(_) => panic!(format!("{} is not unicode.", key))
-        }
+        Err(env::VarError::NotPresent) => None,
+        Err(env::VarError::NotUnicode(_)) => panic!(format!("{} is not unicode.", key)),
     }
 }
 
-fn build_index(outfile: &path::Path, dir: &path::Path) -> io::Result<()> {
+fn build_index(outfile: &path::Path, dir: &path::Path) -> MainResult<()> {
     if !dir.is_dir() {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "MATES_DIR must be a directory.",
-        ));
+        return Err(MainError::new("MATES_DIR must be a directory.").into());
     };
 
     let af = AtomicFile::new(&outfile, AllowOverwrite);
@@ -81,10 +78,7 @@ fn build_index(outfile: &path::Path, dir: &path::Path) -> io::Result<()> {
     }));
 
     if errors {
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Several errors happened while generating the index.",
-        ))
+        Err(MainError::new("Several errors happened while generating the index.").into())
     } else {
         Ok(())
     }
@@ -100,7 +94,7 @@ pub fn cli_main() {
     };
 }
 
-pub fn cli_main_raw() -> Result<(), Box<Error>> {
+pub fn cli_main_raw() -> MainResult<()> {
     let matches = App::new("mates")
         .version("0.0.1")  // FIXME: Use package metadata
         .author("Markus Unterwaditzer")
@@ -131,14 +125,14 @@ pub fn cli_main_raw() -> Result<(), Box<Error>> {
     let command = match matches.subcommand_name() {
         Some(x) => x,
         None => {
-            return Err(CliError::new("Command required. See --help for usage.").into());
+            return Err(MainError::new("Command required. See --help for usage.").into());
         }
     };
 
     let config = match Configuration::new() {
         Ok(x) => x,
         Err(e) => {
-            return Err(CliError::new(format!("Error while reading configuration: {}", e)).into());
+            return Err(MainError::new(format!("Error while reading configuration: {}", e)).into());
         }
     };
 
@@ -184,13 +178,13 @@ pub fn cli_main_raw() -> Result<(), Box<Error>> {
             try!(edit_contact(&config, &query[..]));
         },
         _ => {
-            return Err(CliError::new(format!("Invalid command: {}", command)).into());
+            return Err(MainError::new(format!("Invalid command: {}", command)).into());
         }
     };
     Ok(())
 }
 
-fn edit_contact(config: &Configuration, query: &str) -> io::Result<()> {
+fn edit_contact(config: &Configuration, query: &str) -> MainResult<()> {
     let results = if get_pwd().join(query).is_file() {
         vec![path::PathBuf::from(query)]
     } else {
@@ -198,15 +192,9 @@ fn edit_contact(config: &Configuration, query: &str) -> io::Result<()> {
     };
 
     if results.len() < 1 {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            "No such contact.",
-        ))
+        return Err(MainError::new("No such contact.").into());
     } else if results.len() > 1 {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Ambiguous query.",
-        ))
+        return Err(MainError::new("Ambiguous query.").into());
     }
 
     let fpath = &results[0];
@@ -233,16 +221,13 @@ fn edit_contact(config: &Configuration, query: &str) -> io::Result<()> {
 
     if (&fcontent[..]).trim().len() == 0 {
         try!(fs::remove_file(fpath));
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Contact emptied, file removed.",
-        ));
+        return Err(MainError::new("Contact emptied, file removed.").into());
     };
 
     Ok(())
 }
 
-fn mutt_query<'a>(config: &Configuration, query: &str) -> io::Result<()> {
+fn mutt_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
     println!("");  // For some reason mutt requires an empty line
     for item in try!(utils::index_query(config, query)) {
         if item.email.len() > 0 && item.name.len() > 0 {
@@ -252,14 +237,14 @@ fn mutt_query<'a>(config: &Configuration, query: &str) -> io::Result<()> {
     Ok(())
 }
 
-fn file_query<'a>(config: &Configuration, query: &str) -> io::Result<()> {
+fn file_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
     for path in try!(utils::file_query(config, query)).iter() {
         println!("{}", path.display());
     };
     Ok(())
 }
 
-fn email_query<'a>(config: &Configuration, query: &str) -> io::Result<()> {
+fn email_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
     for item in try!(utils::index_query(config, query)) {
         if item.name.len() > 0 && item.email.len() > 0 {
             println!("{} <{}>", item.name, item.email);
@@ -306,13 +291,13 @@ impl Configuration {
 
 
 #[derive(PartialEq, Eq, Debug)]
-pub struct CliError {
+pub struct MainError {
     desc: String,
 }
 
-pub type CliResult<T> = Result<T, CliError>;
+pub type MainResult<T> = Result<T, Box<Error>>;
 
-impl Error for CliError {
+impl Error for MainError {
     fn description(&self) -> &str {
         &self.desc[..]
     }
@@ -322,15 +307,15 @@ impl Error for CliError {
     }
 }
 
-impl fmt::Display for CliError {
+impl fmt::Display for MainError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.description().fmt(f)
     }
 }
 
-impl CliError {
+impl MainError {
     pub fn new<T: Into<String>>(desc: T) -> Self {
-        CliError {
+        MainError {
             desc: desc.into(),
         }
     }
