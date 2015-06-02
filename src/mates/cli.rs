@@ -115,13 +115,13 @@ pub fn cli_main() {
                     .about("Rewrite/create the index"))
         .subcommand(SubCommand::new("mutt-query")
                     .about("Search for contact, output is usable for mutt's query_command.")
-                    .arg(Arg::new("query").required(true).index(1)))
+                    .arg(Arg::new("query").index(1)))
         .subcommand(SubCommand::new("file-query")
                     .about("Search for contact, return just the filename.")
-                    .arg(Arg::new("query").required(true).index(1)))
+                    .arg(Arg::new("query").index(1)))
         .subcommand(SubCommand::new("email-query")
                     .about("Search for contact, return \"name <email>\".")
-                    .arg(Arg::new("query").required(true).index(1)))
+                    .arg(Arg::new("query").index(1)))
         .subcommand(SubCommand::new("add")
                     .about("Take mail from stdin, add sender to contacts. Print filename."))
         .subcommand(SubCommand::new("edit")
@@ -131,7 +131,7 @@ pub fn cli_main() {
                         also clears stdin, which is necessary for editors and most interactive 
                         programs to not act weird when piped to."
                     )
-                    .arg(Arg::new("file-or-query").required(true).index(1)))
+                    .arg(Arg::new("file-or-query").index(1)))
         .get_matches();
 
     let command = match matches.subcommand_name() {
@@ -160,18 +160,15 @@ pub fn cli_main() {
             main_try!(build_index(&config.index_path, &config.vdir_path), "Failed to build index");
         },
         "mutt-query" => {
-            let query = submatches.value_of("query")
-                .expect("Internal error: query arg should've been required.");
+            let query = submatches.value_of("query").unwrap_or("");
             main_try!(mutt_query(&config, &query[..]), "Failed to execute grep");
         },
         "file-query" => {
-            let query = submatches.value_of("query")
-                .expect("Internal error: query arg should've been required.");
+            let query = submatches.value_of("query").unwrap_or("");
             main_try!(file_query(&config, &query[..]), "Failed to execute grep");
         },
         "email-query" => {
-            let query = submatches.value_of("query")
-                .expect("Internal error: query arg should've been required.");
+            let query = submatches.value_of("query").unwrap_or("");
             main_try!(email_query(&config, &query[..]), "Failed to execute grep");
         },
         "add" => {
@@ -196,8 +193,7 @@ pub fn cli_main() {
             main_try!(index_fp.write_all(index_entry.as_bytes()), "Failed to write to index");
         },
         "edit" => {
-            let query = submatches.value_of("file-or-query")
-                .expect("Internal error: query arg should've been required.");
+            let query = submatches.value_of("file-or-query").unwrap_or("");
             main_try!(edit_contact(&config, &query[..]), "Failed to edit contact");
         },
         _ => {
