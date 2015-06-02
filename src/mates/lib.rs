@@ -1,4 +1,4 @@
-#![feature(exit_status,path_ext)]
+#![feature(exit_status)]
 extern crate vobject;
 extern crate email;
 extern crate uuid;

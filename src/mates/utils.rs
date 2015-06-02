@@ -1,6 +1,5 @@
 use std::borrow::ToOwned;
 use std::collections::HashSet;
-use std::fs::PathExt;
 use std::fs;
 use std::io::{Read,Write};
 use std::io;
@@ -14,6 +13,31 @@ use uuid::Uuid;
 use vobject::{Component,Property,parse_component,write_component};
 
 use cli::Configuration;
+
+pub trait CustomPathExt {
+    fn metadata(&self) -> io::Result<fs::Metadata>;
+    fn exists(&self) -> bool;
+    fn is_file(&self) -> bool;
+    fn is_dir(&self) -> bool;
+    fn str_extension(&self) -> Option<&str>;
+}
+
+impl CustomPathExt for path::Path {
+    fn metadata(&self) -> io::Result<fs::Metadata> { fs::metadata(self) }
+
+    fn exists(&self) -> bool { fs::metadata(self).is_ok() }
+
+    fn is_file(&self) -> bool {
+        fs::metadata(self).map(|s| s.is_file()).unwrap_or(false)
+    }
+    fn is_dir(&self) -> bool {
+        fs::metadata(self).map(|s| s.is_dir()).unwrap_or(false)
+    }
+
+    fn str_extension(&self) -> Option<&str> {
+        self.extension().and_then(|x| x.to_str())
+    }
+}
 
 pub fn handle_process(process: &mut process::Child) -> io::Result<()> {
     let exitcode = try!(process.wait());

@@ -1,5 +1,4 @@
 use std::fs;
-use std::fs::PathExt;
 use std::io;
 use std::io::{Read,Write};
 use std::process;
@@ -12,6 +11,7 @@ use clap::{Arg,App,SubCommand};
 use atomicwrites::{AtomicFile,AllowOverwrite};
 
 use utils;
+use utils::CustomPathExt;
 
 macro_rules! main_try {
     ($result: expr, $errmsg: expr) => (
@@ -66,12 +66,9 @@ fn build_index(outfile: &path::Path, dir: &path::Path) -> io::Result<()> {
 
             let pathbuf = entry.path();
 
-            if !(*pathbuf).is_file() || match pathbuf.extension() {
-                Some(x) => x.to_str().unwrap_or("") != "vcf",
-                None => false
-            } {
+            if pathbuf.str_extension().unwrap_or("") != "vcf" || !pathbuf.is_file() {
                 continue;
-            }
+            };
 
             let contact = match utils::Contact::from_file(&pathbuf) {
                 Ok(x) => x,
