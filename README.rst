@@ -30,14 +30,14 @@ Installation
 .. image:: https://travis-ci.org/untitaker/mates.rs.svg?branch=master
     :target: https://travis-ci.org/untitaker/mates.rs
 
-If the above button is green, mates doesn't break against Rust nightly.
+If the above button is green, mates doesn't break against Rust nightly or beta.
 
 On ArchLinux, simply use the mates-git_ package from the AUR.
 
 .. _mates-git: https://aur.archlinux.org/packages/mates-git/
 
-For a manual installation, you need to have the nightly versions of Rust_ and
-Cargo_ installed.
+For a manual installation, you need to have Rust_ and Cargo_ installed. Both
+1.0 and the nightlies should work.
 
 .. _Rust: http://www.rust-lang.org/
 .. _Cargo: https://crates.io/
