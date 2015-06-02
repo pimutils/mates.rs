@@ -1,4 +1,3 @@
-#![feature(exit_status)]
 extern crate vobject;
 extern crate email;
 extern crate uuid;

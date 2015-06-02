@@ -1,11 +1,12 @@
-use std::fs;
-use std::io;
-use std::io::{Read,Write};
-use std::process;
-use std::path;
-use std::env;
 use std::borrow::ToOwned;
+use std::env;
 use std::error::Error;
+use std::fmt;
+use std::fs;
+use std::io::{Read,Write};
+use std::io;
+use std::path;
+use std::process;
 
 use clap::{Arg,App,SubCommand};
 use atomicwrites::{AtomicFile,AllowOverwrite};
@@ -13,20 +14,6 @@ use atomicwrites::{AtomicFile,AllowOverwrite};
 use utils;
 use utils::CustomPathExt;
 
-macro_rules! main_try {
-    ($result: expr, $errmsg: expr) => (
-        match $result {
-            Ok(m) => m,
-            Err(e) => {
-                if e.description().len() > 0 {
-                    writeln!(&mut io::stderr(), "{}: {}", $errmsg, e).unwrap();
-                };
-                env::set_exit_status(1);
-                return;
-            }
-        }
-    )
-}
 
 fn get_pwd() -> path::PathBuf {
     env::current_dir().ok().expect("Failed to get CWD")
@@ -104,6 +91,16 @@ fn build_index(outfile: &path::Path, dir: &path::Path) -> io::Result<()> {
 }
 
 pub fn cli_main() {
+    match cli_main_raw() {
+        Err(e) => {
+            writeln!(&mut io::stderr(), "{}", e).unwrap();
+            process::exit(1);
+        },
+        _ => ()
+    };
+}
+
+pub fn cli_main_raw() -> Result<(), Box<Error>> {
     let matches = App::new("mates")
         .version("0.0.1")  // FIXME: Use package metadata
         .author("Markus Unterwaditzer")
@@ -134,18 +131,14 @@ pub fn cli_main() {
     let command = match matches.subcommand_name() {
         Some(x) => x,
         None => {
-            println!("Command required. See --help for usage.");
-            env::set_exit_status(1);
-            return;
+            return Err(CliError::new("Command required. See --help for usage.").into());
         }
     };
 
     let config = match Configuration::new() {
         Ok(x) => x,
         Err(e) => {
-            println!("Error while reading configuration: {}", e);
-            env::set_exit_status(1);
-            return;
+            return Err(CliError::new(format!("Error while reading configuration: {}", e)).into());
         }
     };
 
@@ -154,50 +147,47 @@ pub fn cli_main() {
     match command {
         "index" => {
             println!("Rebuilding index file \"{}\"...", config.index_path.display());
-            main_try!(build_index(&config.index_path, &config.vdir_path), "Failed to build index");
+            try!(build_index(&config.index_path, &config.vdir_path));
         },
         "mutt-query" => {
             let query = submatches.value_of("query").unwrap_or("");
-            main_try!(mutt_query(&config, &query[..]), "Failed to execute grep");
+            try!(mutt_query(&config, &query[..]));
         },
         "file-query" => {
             let query = submatches.value_of("query").unwrap_or("");
-            main_try!(file_query(&config, &query[..]), "Failed to execute grep");
+            try!(file_query(&config, &query[..]));
         },
         "email-query" => {
             let query = submatches.value_of("query").unwrap_or("");
-            main_try!(email_query(&config, &query[..]), "Failed to execute grep");
+            try!(email_query(&config, &query[..]));
         },
         "add" => {
             let stdin = io::stdin();
             let mut email = String::new();
-            main_try!(stdin.lock().read_to_string(&mut email), "Failed to read email");
-            let contact = main_try!(utils::add_contact_from_email(
+            try!(stdin.lock().read_to_string(&mut email));
+            let contact = try!(utils::add_contact_from_email(
                 &config.vdir_path,
                 &email[..]
-            ), "Failed to add contact");
+            ));
             println!("{}", contact.path.display());
 
-            let mut index_fp = main_try!(
-                fs::OpenOptions::new()
-                .append(true)
-                .write(true)
-                .open(&config.index_path),
-                "Failed to open index"
-            );
+            let mut index_fp = try!(fs::OpenOptions::new()
+                                    .append(true)
+                                    .write(true)
+                                    .open(&config.index_path));
 
-            let index_entry = main_try!(utils::index_item_from_contact(&contact), "Failed to generate index");
-            main_try!(index_fp.write_all(index_entry.as_bytes()), "Failed to write to index");
+            let index_entry = try!(utils::index_item_from_contact(&contact));
+            try!(index_fp.write_all(index_entry.as_bytes()));
         },
         "edit" => {
             let query = submatches.value_of("file-or-query").unwrap_or("");
-            main_try!(edit_contact(&config, &query[..]), "Failed to edit contact");
+            try!(edit_contact(&config, &query[..]));
         },
         _ => {
-            println!("Invalid command: {}", command);
-            env::set_exit_status(1);
+            return Err(CliError::new(format!("Invalid command: {}", command)).into());
         }
     };
+    Ok(())
 }
 
 fn edit_contact(config: &Configuration, query: &str) -> io::Result<()> {
@@ -311,5 +301,37 @@ impl Configuration {
                 None => "grep -i".to_owned()
             }
         })
+    }
+}
+
+
+#[derive(PartialEq, Eq, Debug)]
+pub struct CliError {
+    desc: String,
+}
+
+pub type CliResult<T> = Result<T, CliError>;
+
+impl Error for CliError {
+    fn description(&self) -> &str {
+        &self.desc[..]
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        None
+    }
+}
+
+impl fmt::Display for CliError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.description().fmt(f)
+    }
+}
+
+impl CliError {
+    pub fn new<T: Into<String>>(desc: T) -> Self {
+        CliError {
+            desc: desc.into(),
+        }
     }
 }
