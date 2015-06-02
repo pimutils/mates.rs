@@ -2,6 +2,9 @@
 Mates
 =====
 
+.. image:: https://travis-ci.org/untitaker/mates.rs.svg?branch=master
+    :target: https://travis-ci.org/untitaker/mates.rs
+
 A commandline addressbook. The main goals are:
 
 - **Few features, high extensibility**
@@ -26,11 +29,6 @@ A commandline addressbook. The main goals are:
 
 Installation
 ============
-
-.. image:: https://travis-ci.org/untitaker/mates.rs.svg?branch=master
-    :target: https://travis-ci.org/untitaker/mates.rs
-
-If the above button is green, mates doesn't break against Rust nightly or beta.
 
 On ArchLinux, simply use the mates-git_ package from the AUR.
 
