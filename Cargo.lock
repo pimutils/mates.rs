@@ -191,7 +191,7 @@ dependencies = [
 [[package]]
 name = "vobject"
 version = "0.0.1"
-source = "git+https://github.com/untitaker/rust-vobject.git#083620129bd316b5211e61b658a7d2b8a696b975"
+source = "git+https://github.com/untitaker/rust-vobject.git#54fea0fba5023bb96fe05aeb4cb8537d1585285c"
 
 [[package]]
 name = "winapi"
