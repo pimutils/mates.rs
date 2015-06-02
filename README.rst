@@ -63,7 +63,7 @@ The other environment variables are:
 - ``MATES_INDEX``, the filepath to the contact index. Default to ``~/.mates_index``.
 
 **Note: "mates index" must be called regularly.** Even when using mates' own
-commands, the index will be not updated automatically, as this would impact UI
+commands, the index will not be updated automatically, as this would impact UI
 responsiveness massively.
 
 
