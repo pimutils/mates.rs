@@ -99,27 +99,27 @@ pub fn cli_main_raw() -> MainResult<()> {
         .version("0.0.1")  // FIXME: Use package metadata
         .author("Markus Unterwaditzer")
         .about("A simple commandline addressbook")
-        .subcommand(SubCommand::new("index")
+        .subcommand(SubCommand::with_name("index")
                     .about("Rewrite/create the index"))
-        .subcommand(SubCommand::new("mutt-query")
+        .subcommand(SubCommand::with_name("mutt-query")
                     .about("Search for contact, output is usable for mutt's query_command.")
-                    .arg(Arg::new("query").index(1)))
-        .subcommand(SubCommand::new("file-query")
+                    .arg(Arg::with_name("query").index(1)))
+        .subcommand(SubCommand::with_name("file-query")
                     .about("Search for contact, return just the filename.")
-                    .arg(Arg::new("query").index(1)))
-        .subcommand(SubCommand::new("email-query")
+                    .arg(Arg::with_name("query").index(1)))
+        .subcommand(SubCommand::with_name("email-query")
                     .about("Search for contact, return \"name <email>\".")
-                    .arg(Arg::new("query").index(1)))
-        .subcommand(SubCommand::new("add")
+                    .arg(Arg::with_name("query").index(1)))
+        .subcommand(SubCommand::with_name("add")
                     .about("Take mail from stdin, add sender to contacts. Print filename."))
-        .subcommand(SubCommand::new("edit")
+        .subcommand(SubCommand::with_name("edit")
                     .about(
                         "Open contact (given by filepath or search-string) in $MATES_EDITOR. If
                         the file is cleared, the contact is removed. As a further convenience it 
                         also clears stdin, which is necessary for editors and most interactive 
                         programs to not act weird when piped to."
                     )
-                    .arg(Arg::new("file-or-query").index(1)))
+                    .arg(Arg::with_name("file-or-query").index(1)))
         .get_matches();
 
     let command = match matches.subcommand_name() {
