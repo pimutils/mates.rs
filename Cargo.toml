@@ -1,6 +1,6 @@
 [package]
 name = "mates"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>"]
 
 [lib]

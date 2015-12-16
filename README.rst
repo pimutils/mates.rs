@@ -40,12 +40,10 @@ For a manual installation, you need to have Rust_ and Cargo_ installed. Both
 .. _Rust: http://www.rust-lang.org/
 .. _Cargo: https://crates.io/
 
-1. Clone this repository, ``cd`` to it.
-2. Run ``cargo build --release``. You could omit the release-flag, but then
-   mates would run awfully slow.
-3. The resulting binary is in ``./target/release/`` (``./target/`` if you built
-   without the release-flag), and depends on ``glibc``, and ``grep`` in your
-   ``PATH``.
+1. ``cargo install mates`` (or ``cargo install --git
+   https://github.com/untitaker/mates.rs`` to install the dev version)
+2. Add ``~/.cargo/bin/`` to your path. The binary inside it doesn't depend on
+   either Rust or Cargo, just ``glibc`` and ``grep``.
 
 
 Usage
