@@ -3,6 +3,13 @@ name = "mates"
 version = "0.1.1"
 authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>"]
 license = "MIT"
+keywords = ["vdir", "vcard", "contacts", "addressbook"]
+readme = "README.md"
+
+description = "A very simple commandline addressbook"
+documentation = "https://github.com/untitaker/mates.rs"
+homepage = "https://github.com/untitaker/mates.rs"
+repository = "https://github.com/untitaker/mates.rs"
 
 [lib]
 name = "mates"
