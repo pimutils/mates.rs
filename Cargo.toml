@@ -17,6 +17,4 @@ uuid = "*"
 atomicwrites = "*"
 email = "*"
 clap = "*"
-
-[dependencies.vobject]
-git = "https://github.com/untitaker/rust-vobject.git"
+vobject = "*"
