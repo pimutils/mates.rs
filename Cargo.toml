@@ -1,6 +1,6 @@
 [package]
 name = "mates"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>"]
 license = "MIT"
 keywords = ["vdir", "vcard", "contacts", "addressbook"]
