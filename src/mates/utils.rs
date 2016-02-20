@@ -151,6 +151,8 @@ impl Contact {
 fn generate_component(uid: String, fullname: Option<&str>, email: Option<&str>) -> Component {
     let mut comp = Component::new("VCARD");
 
+    comp.all_props_mut("VERSION").push(Property::new("VERSION", "3.0"));
+
     match fullname {
         Some(x) => comp.all_props_mut("FN").push(Property::new("FN", x)),
         None => ()
