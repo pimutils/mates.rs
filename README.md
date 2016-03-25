@@ -30,13 +30,13 @@ On ArchLinux, simply use the
 AUR.
 
 For a manual installation, you need to have [Rust](http://www.rust-lang.org/)
-and [Cargo_](https://crates.io/) installed. Both 1.0 and the nightlies should
+and [Cargo](https://crates.io/) installed. Both 1.0 and the nightlies should
 work.
 
 1. `cargo install mates` (or `cargo install --git
    https://github.com/untitaker/mates.rs` to install the dev version)
 2. Add `~/.cargo/bin/` to your path. The binary inside it doesn't depend on
-   either Rust or Cargo, just `glibc`` and `grep``.
+   either Rust or Cargo, just `glibc` and `grep`.
 
 
 ## Usage
