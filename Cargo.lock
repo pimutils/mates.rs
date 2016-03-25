@@ -3,7 +3,7 @@ name = "mates"
 version = "0.1.2"
 dependencies = [
  "atomicwrites 0.0.14 (registry+https://github.com/rust-lang/crates.io-index)",
- "clap 1.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "clap 2.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "email 0.0.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "uuid 0.1.18 (registry+https://github.com/rust-lang/crates.io-index)",
  "vobject 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -26,7 +26,7 @@ dependencies = [
 
 [[package]]
 name = "bitflags"
-version = "0.3.3"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -40,13 +40,14 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "1.5.5"
+version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "ansi_term 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "bitflags 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bitflags 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "strsim 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "vec_map 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "vec_map 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -190,7 +191,7 @@ dependencies = [
 
 [[package]]
 name = "vec_map"
-version = "0.4.0"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
