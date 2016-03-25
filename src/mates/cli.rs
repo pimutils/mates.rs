@@ -96,7 +96,7 @@ pub fn cli_main() {
 
 pub fn cli_main_raw() -> MainResult<()> {
     let matches = App::new("mates")
-        .version("0.0.1")  // FIXME: Use package metadata
+        .version(env!("CARGO_PKG_VERSION"))
         .author("Markus Unterwaditzer")
         .about("A simple commandline addressbook")
         .setting(AppSettings::SubcommandRequired)
