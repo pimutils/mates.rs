@@ -115,9 +115,9 @@ pub fn cli_main_raw() -> MainResult<()> {
                     .about("Take mail from stdin, add sender to contacts. Print filename."))
         .subcommand(SubCommand::with_name("edit")
                     .about(
-                        "Open contact (given by filepath or search-string) in $MATES_EDITOR. If
-                        the file is cleared, the contact is removed. As a further convenience it 
-                        also clears stdin, which is necessary for editors and most interactive 
+                        "Open contact (given by filepath or search-string) in $MATES_EDITOR. If \
+                        the file is cleared, the contact is removed. As a further convenience it \
+                        also clears stdin, which is necessary for editors and most interactive \
                         programs to not act weird when piped to."
                     )
                     .arg(Arg::with_name("file-or-query").index(1)))
