@@ -225,9 +225,12 @@ fn edit_contact(config: &Configuration, query: &str) -> MainResult<()> {
 
 fn mutt_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
     println!("");  // For some reason mutt requires an empty line
-    for item in try!(utils::index_query(config, query)) {
-        if item.email.len() > 0 && item.name.len() > 0 {
-            println!("{}\t{}", item.email, item.name);
+    // We need to ignore errors here, otherwise mutt's UI will glitch
+    if let Ok(items) = utils::index_query(config, query) {
+        for item in items {
+            if item.email.len() > 0 && item.name.len() > 0 {
+                println!("{}\t{}", item.email, item.name);
+            };
         };
     };
     Ok(())
