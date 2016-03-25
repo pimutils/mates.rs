@@ -8,7 +8,7 @@ use std::io;
 use std::path;
 use std::process;
 
-use clap::{Arg,App,SubCommand};
+use clap::{Arg,App,SubCommand,AppSettings};
 use atomicwrites::{AtomicFile,AllowOverwrite};
 
 use utils;
@@ -99,6 +99,7 @@ pub fn cli_main_raw() -> MainResult<()> {
         .version("0.0.1")  // FIXME: Use package metadata
         .author("Markus Unterwaditzer")
         .about("A simple commandline addressbook")
+        .setting(AppSettings::SubcommandRequired)
         .subcommand(SubCommand::with_name("index")
                     .about("Rewrite/create the index"))
         .subcommand(SubCommand::with_name("mutt-query")
@@ -122,12 +123,7 @@ pub fn cli_main_raw() -> MainResult<()> {
                     .arg(Arg::with_name("file-or-query").index(1)))
         .get_matches();
 
-    let command = match matches.subcommand_name() {
-        Some(x) => x,
-        None => {
-            return Err(MainError::new("Command required. See --help for usage.").into());
-        }
-    };
+    let command = matches.subcommand_name().unwrap();
 
     let config = match Configuration::new() {
         Ok(x) => x,
