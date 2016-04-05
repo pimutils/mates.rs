@@ -25,10 +25,6 @@ A commandline addressbook. The main goals are:
 
 ## Installation
 
-On ArchLinux, simply use the
-[mates-git](https://aur.archlinux.org/packages/mates-git/) package from the
-AUR.
-
 For a manual installation, you need to have [Rust](http://www.rust-lang.org/)
 and [Cargo](https://crates.io/) installed. Both 1.0 and the nightlies should
 work.
