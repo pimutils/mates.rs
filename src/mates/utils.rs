@@ -170,18 +170,11 @@ pub fn index_query<'a>(config: &Configuration, query: &str) -> io::Result<IndexI
     let mut process = try!(
         command_from_config(&config.grep_cmd[..])
         .arg(&query[..])
+        .arg(&config.index_path)
         .stdin(process::Stdio::piped())
         .stdout(process::Stdio::piped())
         .stderr(process::Stdio::inherit())
         .spawn());
-
-    {
-        let mut index_fp = try!(fs::File::open(&config.index_path));
-        let mut stdin = process.stdin.take().unwrap();
-        let mut line: Vec<u8> = vec![];
-        try!(index_fp.read_to_end(&mut line));
-        try!(stdin.write_all(&line[..]));
-    }
 
     try!(handle_process(&mut process));
 

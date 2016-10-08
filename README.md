@@ -47,7 +47,9 @@ Then run the binary with `--help` to list all commands.
 The other environment variables are:
 
 - `MATES_EDITOR`, override the vCard editor to use. Default to `EDITOR`.
-- `MATES_GREP`, override the grep binary to use. Default to `grep`.
+- `MATES_GREP`, override the grep binary to use. Default to `grep`. This
+  command must accept a search string as first argument and a filepath as
+  second one.
 - `MATES_INDEX`, the filepath to the contact index. Default to `~/.mates_index`.
 
 **Note: "mates index" must be called regularly.** Even when using mates' own
