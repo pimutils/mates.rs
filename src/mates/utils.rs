@@ -126,7 +126,7 @@ impl Contact {
             let mut uid;
             let mut contact_path;
             loop {
-                uid = Uuid::new_v4().to_simple_string();
+                uid = Uuid::new_v4().hyphenated().to_string();
                 contact_path = dir.join(&format!("{}.vcf", uid));
                 if !(*contact_path).exists() {
                     break
@@ -134,7 +134,7 @@ impl Contact {
             };
             (uid, contact_path)
         };
-        Contact { path: contact_path, component: generate_component(uid, fullname, email) }
+        Contact { path: contact_path, component: generate_component(uid.into(), fullname, email) }
     }
 
     pub fn write_create(&self) -> io::Result<()> {
