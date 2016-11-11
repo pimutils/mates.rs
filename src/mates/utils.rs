@@ -220,9 +220,9 @@ pub fn index_item_from_contact(contact: &Contact) -> io::Result<String> {
 
 /// Return a tuple (fullname, email)
 pub fn parse_from_header<'a>(s: &'a String) -> (Option<&'a str>, Option<&'a str>) {
-    let mut split = s.rsplitn(1, ' ');
+    let mut split = s.rsplitn(2, '<');
     let email = match split.next() {
-        Some(x) => Some(x.trim_left_matches('<').trim_right_matches('>')),
+        Some(x) => Some(x.trim_right_matches('>')),
         None => Some(&s[..])
     };
     let name = split.next();
