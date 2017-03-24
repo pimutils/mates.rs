@@ -1,6 +1,6 @@
 # Mates
 
-[![Build status](https://travis-ci.org/untitaker/mates.rs.svg?branch=master)](https://travis-ci.org/untitaker/mates.rs)
+[![Build status](https://travis-ci.org/pimutils/mates.rs.svg?branch=master)](https://travis-ci.org/pimutils/mates.rs)
 
 A commandline addressbook. The main goals are:
 
