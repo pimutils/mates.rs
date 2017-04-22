@@ -151,18 +151,18 @@ impl Contact {
 fn generate_component(uid: String, fullname: Option<&str>, email: Option<&str>) -> Component {
     let mut comp = Component::new("VCARD");
 
-    comp.all_props_mut("VERSION").push(Property::new("VERSION", "3.0"));
+    comp.push(Property::new("VERSION", "3.0"));
 
     match fullname {
-        Some(x) => comp.all_props_mut("FN").push(Property::new("FN", x)),
+        Some(x) => comp.push(Property::new("FN", x)),
         None => ()
     };
 
     match email {
-        Some(x) => comp.all_props_mut("EMAIL").push(Property::new("EMAIL", x)),
+        Some(x) => comp.push(Property::new("EMAIL", x)),
         None => ()
     };
-    comp.all_props_mut("UID").push(Property::new("UID", &uid[..]));
+    comp.push(Property::new("UID", &uid[..]));
     comp
 }
 
@@ -202,7 +202,7 @@ pub fn file_query(config: &Configuration, query: &str) -> io::Result<HashSet<pat
 }
 
 pub fn index_item_from_contact(contact: &Contact) -> io::Result<String> {
-    let name = match contact.component.single_prop("FN") {
+    let name = match contact.component.get_only("FN") {
         Some(name) => name.value_as_string(),
         None => return Err(io::Error::new(
             io::ErrorKind::Other,
@@ -210,7 +210,7 @@ pub fn index_item_from_contact(contact: &Contact) -> io::Result<String> {
         ))
     };
 
-    let emails = contact.component.all_props("EMAIL");
+    let emails = contact.component.get_all("EMAIL");
     let mut rv = String::new();
     for email in emails.iter() {
         rv.push_str(&format!("{}\t{}\t{}\n", email.value_as_string(), name, contact.path.display())[..]);

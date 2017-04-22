@@ -4,16 +4,12 @@
 
 A commandline addressbook. The main goals are:
 
-- **Few features, high extensibility**
+- **High extensibility**
 
   - Mates operates on a directory of
     [vCard](https://tools.ietf.org/html/rfc6350) files, a standardized file
     format for contacts. Because of this, another program can be used for
     synchronization with CardDAV-servers (see below).
-
-  - Mates doesn't come with a contact editor. It relies on other programs to
-    fulfill this task (which can be configured with ``MATES_EDITOR``), by
-    default it will open your text editor.
 
 - **UI responsiveness** For completing email addresses in mutt, mates maintains
   a simple textfile with only a few fields from the vCard file, on which it
@@ -46,7 +42,6 @@ Then run the binary with `--help` to list all commands.
 
 The other environment variables are:
 
-- `MATES_EDITOR`, override the vCard editor to use. Default to `EDITOR`.
 - `MATES_GREP`, override the grep binary to use. Default to `grep`. This
   command must accept a search string as first argument and a filepath as
   second one.

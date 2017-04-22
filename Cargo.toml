@@ -25,4 +25,5 @@ uuid = { version = "0.3", features = ["v4"] }
 atomicwrites = "0.0"
 email = "0.0"
 clap = "2"
-vobject = "0.1"
+vobject = "0.2"
+cursive = "*"

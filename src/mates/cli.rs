@@ -13,6 +13,7 @@ use atomicwrites::{AtomicFile,AllowOverwrite};
 
 use utils;
 use utils::CustomPathExt;
+use editor;
 
 
 #[inline]
@@ -114,12 +115,7 @@ pub fn cli_main_raw() -> MainResult<()> {
         .subcommand(SubCommand::with_name("add")
                     .about("Take mail from stdin, add sender to contacts. Print filename."))
         .subcommand(SubCommand::with_name("edit")
-                    .about(
-                        "Open contact (given by filepath or search-string) in $MATES_EDITOR. If \
-                        the file is cleared, the contact is removed. As a further convenience it \
-                        also clears stdin, which is necessary for editors and most interactive \
-                        programs to not act weird when piped to."
-                    )
+                    .about("Open contact (given by filepath or search-string) interactively.")
                     .arg(Arg::with_name("file-or-query").index(1)))
         .get_matches();
 
@@ -194,19 +190,7 @@ fn edit_contact(config: &Configuration, query: &str) -> MainResult<()> {
     }
 
     let fpath = &results[0];
-    let mut process = try!(process::Command::new("sh")
-        .arg("-c")
-        // clear stdin, http://unix.stackexchange.com/a/77593
-        .arg("$0 \"$1\" < $2")
-        .arg(&config.editor_cmd[..])
-        .arg(fpath.as_os_str())
-        .arg("/dev/tty")
-        .stdin(process::Stdio::inherit())
-        .stdout(process::Stdio::inherit())
-        .stderr(process::Stdio::inherit())
-        .spawn());
-
-    try!(utils::handle_process(&mut process));
+    editor::cli_main(fpath);
 
     let fcontent = {
         let mut fcontent = String::new();
@@ -255,7 +239,6 @@ fn email_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
 pub struct Configuration {
     pub index_path: path::PathBuf,
     pub vdir_path: path::PathBuf,
-    pub editor_cmd: String,
     pub grep_cmd: String
 }
 
@@ -272,13 +255,6 @@ impl Configuration {
             vdir_path: match get_envvar("MATES_DIR") {
                 Some(x) => path::PathBuf::from(&x),
                 None => return Err("MATES_DIR must be set to your vdir path (directory of vcf-files).".to_owned())
-            },
-            editor_cmd: match get_envvar("MATES_EDITOR") {
-                Some(x) => x,
-                None => match get_envvar("EDITOR") {
-                    Some(x) => x,
-                    None => return Err("MATES_EDITOR or EDITOR must be set.".to_owned())
-                }
             },
             grep_cmd: match get_envvar("MATES_GREP") {
                 Some(x) => x,
