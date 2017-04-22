@@ -21,7 +21,7 @@ test = false
 doc = false
 
 [dependencies]
-uuid = { version = "0.3", features = ["v4"] }
+uuid = { version = "0.5", features = ["v4"] }
 atomicwrites = "0.0"
 email = "0.0"
 clap = "2"
