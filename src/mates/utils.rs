@@ -141,9 +141,10 @@ impl Contact {
         let string = write_component(&self.component);
         let af = AtomicFile::new(&self.path, DisallowOverwrite);
 
-        af.write(|f| {
+        try!(af.write(|f| {
             f.write_all(string.as_bytes())
-        })
+        }));
+        Ok(())
     }
 }
 

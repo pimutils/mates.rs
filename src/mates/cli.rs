@@ -1,8 +1,7 @@
 use std::borrow::ToOwned;
 use std::env;
 use std::error::Error;
-use std::fmt;
-use std::fs;
+use std::fmt;use std::fs;
 use std::io::{Read,Write};
 use std::io;
 use std::path;
@@ -38,7 +37,7 @@ fn build_index(outfile: &path::Path, dir: &path::Path) -> MainResult<()> {
     let af = AtomicFile::new(&outfile, AllowOverwrite);
     let mut errors = false;
 
-    try!(af.write(|outf| {
+    try!(af.write::<(), io::Error, _>(|outf| {
         for entry in try!(fs::read_dir(dir)) {
             let entry = match entry {
                 Ok(x) => x,
