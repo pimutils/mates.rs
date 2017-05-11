@@ -1,6 +1,6 @@
 [package]
 name = "mates"
-version = "0.1.4"
+version = "0.2.0"
 authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>"]
 license = "MIT"
 keywords = ["vdir", "vcard", "contacts", "addressbook"]
@@ -26,4 +26,4 @@ atomicwrites = "0.1"
 email = "0.0"
 clap = "2"
 vobject = "0.2"
-cursive = "*"
+cursive = "0.5"
