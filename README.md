@@ -34,6 +34,15 @@ work.
 2. Add `~/.cargo/bin/` to your path. The binary inside it doesn't depend on
    either Rust or Cargo, just `glibc` and `grep`.
 
+### Shell completions
+
+Shell completion files are included in the ArchLinux package for Bash, Fish,
+and Zsh. `cargo install` currently does not support installing additional
+files.
+
+If building from source, they will be found in
+`target/release/build/mates-<hash>/out/<shellfile>`.
+
 
 ## Usage
 

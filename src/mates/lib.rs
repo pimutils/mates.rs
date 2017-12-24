@@ -5,6 +5,7 @@ extern crate atomicwrites;
 extern crate clap;
 extern crate cursive;
 
+pub mod app;
 pub mod cli;
 mod utils;
 mod editor;

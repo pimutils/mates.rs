@@ -7,11 +7,11 @@ use std::io;
 use std::path;
 use std::process;
 
-use clap::{Arg,App,SubCommand,AppSettings};
 use atomicwrites::{AtomicFile,AllowOverwrite};
 
 use utils;
 use utils::CustomPathExt;
+use app;
 use editor;
 
 
@@ -95,28 +95,7 @@ pub fn cli_main() {
 }
 
 pub fn cli_main_raw() -> MainResult<()> {
-    let matches = App::new("mates")
-        .version(env!("CARGO_PKG_VERSION"))
-        .author("Markus Unterwaditzer")
-        .about("A simple commandline addressbook")
-        .setting(AppSettings::SubcommandRequired)
-        .subcommand(SubCommand::with_name("index")
-                    .about("Rewrite/create the index"))
-        .subcommand(SubCommand::with_name("mutt-query")
-                    .about("Search for contact, output is usable for mutt's query_command.")
-                    .arg(Arg::with_name("query").index(1)))
-        .subcommand(SubCommand::with_name("file-query")
-                    .about("Search for contact, return just the filename.")
-                    .arg(Arg::with_name("query").index(1)))
-        .subcommand(SubCommand::with_name("email-query")
-                    .about("Search for contact, return \"name <email>\".")
-                    .arg(Arg::with_name("query").index(1)))
-        .subcommand(SubCommand::with_name("add")
-                    .about("Take mail from stdin, add sender to contacts. Print filename."))
-        .subcommand(SubCommand::with_name("edit")
-                    .about("Open contact (given by filepath or search-string) interactively.")
-                    .arg(Arg::with_name("file-or-query").index(1)))
-        .get_matches();
+    let matches = app::app().get_matches();
 
     let command = matches.subcommand_name().unwrap();
 
