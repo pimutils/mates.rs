@@ -24,9 +24,9 @@ doc = false
 uuid = { version = "0.5", features = ["v4"] }
 atomicwrites = "0.1"
 email = "0.0"
-clap = "2"
+clap = "2.31"
 vobject = "0.2"
 cursive = "0.5"
 
 [build-dependencies]
-clap = "2"
+clap = "2.31"
