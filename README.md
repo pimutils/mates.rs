@@ -82,12 +82,12 @@ responsiveness massively.
     # ~/.muttrc
 
     macro index,pager A \
-        "<pipe-message>mates add | xargs mates edit<enter>" \
+        "<pipe-message>mates add | xargs sh -c 'mates edit \"$@\" < /dev/tty || rm -v \"$@\"' mates<enter>" \
         "add the sender address"
 
 With this configuration, hitting `A` when viewing a message or highlighting
 it in the folder view will add it to your contacts and open the new contact in
-your editor. If you clear the file, the new contact will be deleted.
+the mates editor. If you hit Ctrl-C, the contact will be deleted.
 
 
 ### Using fuzzy finders for email selection
