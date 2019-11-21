@@ -37,8 +37,8 @@ fn build_index(outfile: &path::Path, dir: &path::Path) -> MainResult<()> {
     let af = AtomicFile::new(&outfile, AllowOverwrite);
     let mut errors = false;
 
-    try!(af.write::<(), io::Error, _>(|outf| {
-        for entry in try!(fs::read_dir(dir)) {
+    af.write::<(), io::Error, _>(|outf| {
+        for entry in fs::read_dir(dir)? {
             let entry = match entry {
                 Ok(x) => x,
                 Err(e) => {
@@ -65,7 +65,7 @@ fn build_index(outfile: &path::Path, dir: &path::Path) -> MainResult<()> {
 
             match utils::index_item_from_contact(&contact) {
                 Ok(index_string) => {
-                    try!(outf.write_all(index_string.as_bytes()));
+                    outf.write_all(index_string.as_bytes())?;
                 },
                 Err(e) => {
                     println!("Error while indexing {}: {}", pathbuf.display(), e);
@@ -75,7 +75,7 @@ fn build_index(outfile: &path::Path, dir: &path::Path) -> MainResult<()> {
             };
         };
         Ok(())
-    }));
+    })?;
 
     if errors {
         Err(MainError::new("Several errors happened while generating the index.").into())
@@ -111,41 +111,41 @@ pub fn cli_main_raw() -> MainResult<()> {
     match command {
         "index" => {
             println!("Rebuilding index file \"{}\"...", config.index_path.display());
-            try!(build_index(&config.index_path, &config.vdir_path));
+            build_index(&config.index_path, &config.vdir_path)?;
         },
         "mutt-query" => {
             let query = submatches.value_of("query").unwrap_or("");
-            try!(mutt_query(&config, &query[..]));
+            mutt_query(&config, &query[..])?;
         },
         "file-query" => {
             let query = submatches.value_of("query").unwrap_or("");
-            try!(file_query(&config, &query[..]));
+            file_query(&config, &query[..])?;
         },
         "email-query" => {
             let query = submatches.value_of("query").unwrap_or("");
-            try!(email_query(&config, &query[..]));
+            email_query(&config, &query[..])?;
         },
         "add" => {
             let stdin = io::stdin();
             let mut email = String::new();
-            try!(stdin.lock().read_to_string(&mut email));
-            let contact = try!(utils::add_contact_from_email(
+            stdin.lock().read_to_string(&mut email)?;
+            let contact = utils::add_contact_from_email(
                 &config.vdir_path,
                 &email[..]
-            ));
+            )?;
             println!("{}", contact.path.display());
 
-            let mut index_fp = try!(fs::OpenOptions::new()
+            let mut index_fp = fs::OpenOptions::new()
                                     .append(true)
                                     .write(true)
-                                    .open(&config.index_path));
+                                    .open(&config.index_path)?;
 
-            let index_entry = try!(utils::index_item_from_contact(&contact));
-            try!(index_fp.write_all(index_entry.as_bytes()));
+            let index_entry = utils::index_item_from_contact(&contact)?;
+            index_fp.write_all(index_entry.as_bytes())?;
         },
         "edit" => {
             let query = submatches.value_of("file-or-query").unwrap_or("");
-            try!(edit_contact(&config, &query[..]));
+            edit_contact(&config, &query[..])?;
         },
         _ => {
             return Err(MainError::new(format!("Invalid command: {}", command)).into());
@@ -158,7 +158,7 @@ fn edit_contact(config: &Configuration, query: &str) -> MainResult<()> {
     let results = if get_pwd().join(query).is_file() {
         vec![path::PathBuf::from(query)]
     } else {
-        try!(utils::file_query(config, query)).into_iter().collect()
+        utils::file_query(config, query)?.into_iter().collect()
     };
 
     if results.len() < 1 {
@@ -172,13 +172,13 @@ fn edit_contact(config: &Configuration, query: &str) -> MainResult<()> {
 
     let fcontent = {
         let mut fcontent = String::new();
-        let mut file = try!(fs::File::open(fpath));
-        try!(file.read_to_string(&mut fcontent));
+        let mut file = fs::File::open(fpath)?;
+        file.read_to_string(&mut fcontent)?;
         fcontent
     };
 
     if (&fcontent[..]).trim().len() == 0 {
-        try!(fs::remove_file(fpath));
+        fs::remove_file(fpath)?;
         return Err(MainError::new("Contact emptied, file removed.").into());
     };
 
@@ -199,14 +199,14 @@ fn mutt_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
 }
 
 fn file_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
-    for path in try!(utils::file_query(config, query)).iter() {
+    for path in utils::file_query(config, query)?.iter() {
         println!("{}", path.display());
     };
     Ok(())
 }
 
 fn email_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
-    for item in try!(utils::index_query(config, query)) {
+    for item in utils::index_query(config, query)? {
         if item.name.len() > 0 && item.email.len() > 0 {
             println!("{} <{}>", item.name, item.email);
         };
@@ -248,14 +248,14 @@ pub struct MainError {
     desc: String,
 }
 
-pub type MainResult<T> = Result<T, Box<Error>>;
+pub type MainResult<T> = Result<T, Box<dyn Error>>;
 
 impl Error for MainError {
     fn description(&self) -> &str {
         &self.desc[..]
     }
 
-    fn cause(&self) -> Option<&Error> {
+    fn cause(&self) -> Option<&dyn Error> {
         None
     }
 }
