@@ -21,12 +21,12 @@ test = false
 doc = false
 
 [dependencies]
-uuid = { version = "0.5", features = ["v4"] }
-atomicwrites = "0.1"
-email = "0.0"
-clap = "2.31"
-vobject = "0.2"
-cursive = "0.5"
+uuid = { version = "0.8", features = ["v4"] }
+atomicwrites = "0.2.5"
+email = "0.0.20"
+clap = "2.33.0"
+vobject = "0.7"
+cursive = "0.13"
 
 [build-dependencies]
 clap = "2.31"
