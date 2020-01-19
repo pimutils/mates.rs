@@ -13,7 +13,7 @@ struct FormattedNameEditor {
 impl FormattedNameEditor {
     pub fn pop_from_vobject(
         vobj: &mut vobject::Component,
-    ) -> (Self, views::IdView<views::EditView>) {
+    ) -> (Self, views::NamedView<views::EditView>) {
         let prop = vobj.pop("FN");
         let content = match prop {
             Some(ref p) => p.value_as_string(),
@@ -24,12 +24,12 @@ impl FormattedNameEditor {
             FormattedNameEditor {
                 original_prop: prop,
             },
-            views::EditView::new().content(content).with_id("FN"),
+            views::EditView::new().content(content).with_name("FN"),
         )
     }
 
     pub fn push_to_vobject(&self, siv: &mut Cursive, vobj: &mut vobject::Component) {
-        let v = siv.find_id::<views::EditView>("FN").unwrap();
+        let v = siv.find_name::<views::EditView>("FN").unwrap();
         let content = v.get_content();
         let new_prop = match self.original_prop {
             Some(ref x) => {
@@ -80,13 +80,13 @@ struct EmailsEditor;
 impl EmailsEditor {
     pub fn pop_from_vobject(
         vobj: &mut vobject::Component,
-    ) -> (Self, views::IdView<views::TextArea>) {
+    ) -> (Self, views::NamedView<views::TextArea>) {
         let props = vobj.props.remove("EMAIL").unwrap_or_else(Vec::new);
-        (EmailsEditor, mprops_to_view(props).with_id("emails"))
+        (EmailsEditor, mprops_to_view(props).with_name("emails"))
     }
 
     pub fn push_to_vobject(&self, siv: &mut Cursive, vobj: &mut vobject::Component) {
-        let v = siv.find_id::<views::TextArea>("emails").unwrap();
+        let v = siv.find_name::<views::TextArea>("emails").unwrap();
         view_to_mprops(v, "EMAIL", vobj);
     }
 }
@@ -96,13 +96,13 @@ struct TelEditor;
 impl TelEditor {
     pub fn pop_from_vobject(
         vobj: &mut vobject::Component,
-    ) -> (Self, views::IdView<views::TextArea>) {
+    ) -> (Self, views::NamedView<views::TextArea>) {
         let props = vobj.props.remove("TEL").unwrap_or_else(Vec::new);
-        (TelEditor, mprops_to_view(props).with_id("tels"))
+        (TelEditor, mprops_to_view(props).with_name("tels"))
     }
 
     pub fn push_to_vobject(&self, siv: &mut Cursive, vobj: &mut vobject::Component) {
-        let v = siv.find_id::<views::TextArea>("tels").unwrap();
+        let v = siv.find_name::<views::TextArea>("tels").unwrap();
         view_to_mprops(v, "TEL", vobj);
     }
 }
@@ -115,7 +115,7 @@ pub struct VcardEditor {
 }
 
 impl VcardEditor {
-    pub fn new(mut vobj: vobject::Component) -> (Self, views::BoxView<views::LinearLayout>) {
+    pub fn new(mut vobj: vobject::Component) -> (Self, views::ResizedView<views::LinearLayout>) {
         let (fn_field, fn_view) = FormattedNameEditor::pop_from_vobject(&mut vobj);
         let (email_field, email_view) = EmailsEditor::pop_from_vobject(&mut vobj);
         let (tel_field, tel_view) = TelEditor::pop_from_vobject(&mut vobj);

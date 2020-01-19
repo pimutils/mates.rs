@@ -268,7 +268,7 @@ impl Error for MainError {
 
 impl fmt::Display for MainError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.description().fmt(f)
+        self.desc.fmt(f)
     }
 }
 
