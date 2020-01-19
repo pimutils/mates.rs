@@ -11,6 +11,8 @@ documentation = "https://github.com/untitaker/mates.rs"
 homepage = "https://github.com/untitaker/mates.rs"
 repository = "https://github.com/untitaker/mates.rs"
 
+edition = "2018"
+
 [lib]
 name = "mates"
 path = "src/mates/lib.rs"
@@ -26,7 +28,7 @@ atomicwrites = "0.1"
 email = "0.0"
 clap = "2.31"
 vobject = "0.2"
-cursive = "0.5"
+cursive = "0.14"
 
 [build-dependencies]
 clap = "2.31"
