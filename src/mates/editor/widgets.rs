@@ -1,25 +1,31 @@
 use std::ops::Deref;
 
-use cursive::Cursive;
 use cursive::traits::*;
 use cursive::views;
+use cursive::Cursive;
 
 use vobject;
 
 struct FormattedNameEditor {
-    original_prop: Option<vobject::Property>
+    original_prop: Option<vobject::Property>,
 }
 
 impl FormattedNameEditor {
-    pub fn pop_from_vobject(vobj: &mut vobject::Component) -> (Self, views::IdView<views::EditView>) {
+    pub fn pop_from_vobject(
+        vobj: &mut vobject::Component,
+    ) -> (Self, views::IdView<views::EditView>) {
         let prop = vobj.pop("FN");
         let content = match prop {
             Some(ref p) => p.value_as_string(),
-            None => "".to_owned()
+            None => "".to_owned(),
         };
 
-        (FormattedNameEditor { original_prop: prop }, 
-         views::EditView::new().content(content).with_id("FN"))
+        (
+            FormattedNameEditor {
+                original_prop: prop,
+            },
+            views::EditView::new().content(content).with_id("FN"),
+        )
     }
 
     pub fn push_to_vobject(&self, siv: &mut Cursive, vobj: &mut vobject::Component) {
@@ -30,13 +36,12 @@ impl FormattedNameEditor {
                 let mut nx = x.clone();
                 nx.raw_value = vobject::escape_chars(content.as_str());
                 nx
-            },
-            None => vobject::Property::new("FN", content.as_str())
+            }
+            None => vobject::Property::new("FN", content.as_str()),
         };
         vobj.push(new_prop);
     }
 }
-
 
 fn mprops_to_view(props: Vec<vobject::Property>) -> views::TextArea {
     let mut edit_text = String::new();
@@ -52,7 +57,11 @@ fn mprops_to_view(props: Vec<vobject::Property>) -> views::TextArea {
     views::TextArea::new().content(edit_text)
 }
 
-fn view_to_mprops<V: Deref<Target=views::TextArea>>(v: V, prop_name: &str, vobj: &mut vobject::Component) {
+fn view_to_mprops<V: Deref<Target = views::TextArea>>(
+    v: V,
+    prop_name: &str,
+    vobj: &mut vobject::Component,
+) {
     for line in v.get_content().split('\n') {
         let mut split = line.rsplitn(2, ' ');
         let mut prop = match split.next() {
@@ -69,7 +78,9 @@ fn view_to_mprops<V: Deref<Target=views::TextArea>>(v: V, prop_name: &str, vobj:
 struct EmailsEditor;
 
 impl EmailsEditor {
-    pub fn pop_from_vobject(vobj: &mut vobject::Component) -> (Self, views::IdView<views::TextArea>) {
+    pub fn pop_from_vobject(
+        vobj: &mut vobject::Component,
+    ) -> (Self, views::IdView<views::TextArea>) {
         let props = vobj.props.remove("EMAIL").unwrap_or_else(Vec::new);
         (EmailsEditor, mprops_to_view(props).with_id("emails"))
     }
@@ -83,7 +94,9 @@ impl EmailsEditor {
 struct TelEditor;
 
 impl TelEditor {
-    pub fn pop_from_vobject(vobj: &mut vobject::Component) -> (Self, views::IdView<views::TextArea>) {
+    pub fn pop_from_vobject(
+        vobj: &mut vobject::Component,
+    ) -> (Self, views::IdView<views::TextArea>) {
         let props = vobj.props.remove("TEL").unwrap_or_else(Vec::new);
         (TelEditor, mprops_to_view(props).with_id("tels"))
     }
@@ -98,7 +111,7 @@ pub struct VcardEditor {
     vobj: vobject::Component,
     fn_field: FormattedNameEditor,
     email_field: EmailsEditor,
-    tel_field: TelEditor
+    tel_field: TelEditor,
 }
 
 impl VcardEditor {
@@ -108,20 +121,28 @@ impl VcardEditor {
         let (tel_field, tel_view) = TelEditor::pop_from_vobject(&mut vobj);
 
         let main_col = views::LinearLayout::vertical()
-            .child(views::Panel::new(views::LinearLayout::vertical()
-                                     .child(views::TextView::new("Formatted Name:"))
-                                     .child(fn_view)))
-            .child(views::Panel::new(views::LinearLayout::vertical()
-                                     .child(views::TextView::new("Hit ^C to abort, or "))
-                                     .child(views::Button::new("Save", |s| s.quit()))));
+            .child(views::Panel::new(
+                views::LinearLayout::vertical()
+                    .child(views::TextView::new("Formatted Name:"))
+                    .child(fn_view),
+            ))
+            .child(views::Panel::new(
+                views::LinearLayout::vertical()
+                    .child(views::TextView::new("Hit ^C to abort, or "))
+                    .child(views::Button::new("Save", |s| s.quit())),
+            ));
 
         let props_list = views::LinearLayout::vertical()
-            .child(views::Panel::new(views::LinearLayout::vertical()
-                                     .child(views::TextView::new("Email addresses: (type + email)"))
-                                     .child(email_view)))
-            .child(views::Panel::new(views::LinearLayout::vertical()
-                                     .child(views::TextView::new("Telephone numbers: (type + nr)"))
-                                     .child(tel_view)));
+            .child(views::Panel::new(
+                views::LinearLayout::vertical()
+                    .child(views::TextView::new("Email addresses: (type + email)"))
+                    .child(email_view),
+            ))
+            .child(views::Panel::new(
+                views::LinearLayout::vertical()
+                    .child(views::TextView::new("Telephone numbers: (type + nr)"))
+                    .child(tel_view),
+            ));
 
         let cols = views::LinearLayout::horizontal()
             .child(main_col)
@@ -132,7 +153,7 @@ impl VcardEditor {
             vobj: vobj,
             fn_field: fn_field,
             email_field: email_field,
-            tel_field: tel_field
+            tel_field: tel_field,
         };
 
         (rv, cols)

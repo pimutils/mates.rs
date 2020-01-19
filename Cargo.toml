@@ -11,6 +11,8 @@ documentation = "https://github.com/untitaker/mates.rs"
 homepage = "https://github.com/untitaker/mates.rs"
 repository = "https://github.com/untitaker/mates.rs"
 
+edition = "2018"
+
 [lib]
 name = "mates"
 path = "src/mates/lib.rs"
