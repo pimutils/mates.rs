@@ -1,16 +1,13 @@
 use std::borrow::ToOwned;
 use std::env;
-use std::error::Error;
-use std::fmt;
+use anyhow::Result;
 use std::fs;
 use std::io;
 use std::io::{Read, Write};
 use std::path;
-use std::process;
 
 use atomicwrites::{AllowOverwrite, AtomicFile};
 
-use crate::app;
 use crate::editor;
 use crate::utils;
 use crate::utils::CustomPathExt;
@@ -25,13 +22,13 @@ fn get_envvar(key: &str) -> Option<String> {
     match env::var(key) {
         Ok(x) => Some(x),
         Err(env::VarError::NotPresent) => None,
-        Err(env::VarError::NotUnicode(_)) => panic!(format!("{} is not unicode.", key)),
+        Err(env::VarError::NotUnicode(_)) => panic!("{} is not unicode.", key),
     }
 }
 
-fn build_index(outfile: &path::Path, dir: &path::Path) -> MainResult<()> {
+pub fn build_index(outfile: &path::Path, dir: &path::Path) -> Result<()> {
     if !dir.is_dir() {
-        return Err(MainError::new("MATES_DIR must be a directory.").into());
+        return Err(anyhow!("MATES_DIR must be a directory."));
     };
 
     let af = AtomicFile::new(&outfile, AllowOverwrite);
@@ -78,85 +75,13 @@ fn build_index(outfile: &path::Path, dir: &path::Path) -> MainResult<()> {
     })?;
 
     if errors {
-        Err(MainError::new("Several errors happened while generating the index.").into())
+        Err(anyhow!("Several errors happened while generating the index."))
     } else {
         Ok(())
     }
 }
 
-pub fn cli_main() {
-    match cli_main_raw() {
-        Err(e) => {
-            writeln!(&mut io::stderr(), "{}", e).unwrap();
-            process::exit(1);
-        }
-        _ => (),
-    };
-}
-
-pub fn cli_main_raw() -> MainResult<()> {
-    let matches = app::app().get_matches();
-
-    let command = matches.subcommand_name().unwrap();
-
-    let config = match Configuration::new() {
-        Ok(x) => x,
-        Err(e) => {
-            return Err(MainError::new(format!("Error while reading configuration: {}", e)).into());
-        }
-    };
-
-    let submatches = matches
-        .subcommand_matches(command)
-        .expect("Internal error.");
-
-    match command {
-        "index" => {
-            println!(
-                "Rebuilding index file \"{}\"...",
-                config.index_path.display()
-            );
-            build_index(&config.index_path, &config.vdir_path)?;
-        }
-        "mutt-query" => {
-            let query = submatches.value_of("query").unwrap_or("");
-            mutt_query(&config, &query[..])?;
-        }
-        "file-query" => {
-            let query = submatches.value_of("query").unwrap_or("");
-            file_query(&config, &query[..])?;
-        }
-        "email-query" => {
-            let query = submatches.value_of("query").unwrap_or("");
-            email_query(&config, &query[..])?;
-        }
-        "add" => {
-            let stdin = io::stdin();
-            let mut email = String::new();
-            stdin.lock().read_to_string(&mut email)?;
-            let contact = utils::add_contact_from_email(&config.vdir_path, &email[..])?;
-            println!("{}", contact.path.display());
-
-            let mut index_fp = fs::OpenOptions::new()
-                .append(true)
-                .write(true)
-                .open(&config.index_path)?;
-
-            let index_entry = utils::index_item_from_contact(&contact)?;
-            index_fp.write_all(index_entry.as_bytes())?;
-        }
-        "edit" => {
-            let query = submatches.value_of("file-or-query").unwrap_or("");
-            edit_contact(&config, &query[..])?;
-        }
-        _ => {
-            return Err(MainError::new(format!("Invalid command: {}", command)).into());
-        }
-    };
-    Ok(())
-}
-
-fn edit_contact(config: &Configuration, query: &str) -> MainResult<()> {
+pub fn edit_contact(config: &Configuration, query: &str) -> Result<()> {
     let results = if get_pwd().join(query).is_file() {
         vec![path::PathBuf::from(query)]
     } else {
@@ -164,9 +89,9 @@ fn edit_contact(config: &Configuration, query: &str) -> MainResult<()> {
     };
 
     if results.len() < 1 {
-        return Err(MainError::new("No such contact.").into());
+        return Err(anyhow!("No such contact."));
     } else if results.len() > 1 {
-        return Err(MainError::new("Ambiguous query.").into());
+        return Err(anyhow!("Ambiguous query."));
     }
 
     let fpath = &results[0];
@@ -181,13 +106,13 @@ fn edit_contact(config: &Configuration, query: &str) -> MainResult<()> {
 
     if (&fcontent[..]).trim().len() == 0 {
         fs::remove_file(fpath)?;
-        return Err(MainError::new("Contact emptied, file removed.").into());
+        return Err(anyhow!("Contact emptied, file removed."));
     };
 
     Ok(())
 }
 
-fn mutt_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
+pub fn mutt_query<'a>(config: &Configuration, query: &str) -> Result<()> {
     println!(""); // For some reason mutt requires an empty line
                   // We need to ignore errors here, otherwise mutt's UI will glitch
     if let Ok(items) = utils::index_query(config, query) {
@@ -200,14 +125,14 @@ fn mutt_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
     Ok(())
 }
 
-fn file_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
+pub fn file_query<'a>(config: &Configuration, query: &str) -> Result<()> {
     for path in utils::file_query(config, query)?.iter() {
         println!("{}", path.display());
     }
     Ok(())
 }
 
-fn email_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
+pub fn email_query<'a>(config: &Configuration, query: &str) -> Result<()> {
     for item in utils::index_query(config, query)? {
         if item.name.len() > 0 && item.email.len() > 0 {
             println!("{} <{}>", item.name, item.email);
@@ -246,34 +171,5 @@ impl Configuration {
                 None => "grep -i".to_owned(),
             },
         })
-    }
-}
-
-#[derive(PartialEq, Eq, Debug)]
-pub struct MainError {
-    desc: String,
-}
-
-pub type MainResult<T> = Result<T, Box<dyn Error>>;
-
-impl Error for MainError {
-    fn description(&self) -> &str {
-        &self.desc[..]
-    }
-
-    fn cause(&self) -> Option<&dyn Error> {
-        None
-    }
-}
-
-impl fmt::Display for MainError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.desc.fmt(f)
-    }
-}
-
-impl MainError {
-    pub fn new<T: Into<String>>(desc: T) -> Self {
-        MainError { desc: desc.into() }
     }
 }

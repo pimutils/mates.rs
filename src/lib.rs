@@ -1,3 +1,5 @@
+#[macro_use]
+extern crate anyhow;
 extern crate atomicwrites;
 extern crate clap;
 extern crate cursive;
@@ -8,4 +10,4 @@ extern crate vobject;
 pub mod app;
 pub mod cli;
 mod editor;
-mod utils;
+pub mod utils;
