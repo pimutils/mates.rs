@@ -12,6 +12,7 @@ use cursive::theme::BaseColor::*;
 use cursive::theme::Color::*;
 use cursive::Cursive;
 use cursive::With;
+use crate::cursive::CursiveExt;
 
 mod widgets;
 
