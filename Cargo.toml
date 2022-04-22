@@ -17,7 +17,7 @@ edition = "2018"
 uuid = { version = "0.5", features = ["v4"] }
 atomicwrites = "0.3"
 email = "0.0"
-clap = "2.33.0"
+clap = "3.1"
 vobject = "0.7"
 cursive = "0.17"
 anyhow = "1.0"
