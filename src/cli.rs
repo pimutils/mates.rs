@@ -26,6 +26,17 @@ fn get_envvar(key: &str) -> Option<String> {
     }
 }
 
+pub fn index_contact(index_path: &path::Path, contact: &utils::Contact) -> Result<()> {
+    let mut index_fp = fs::OpenOptions::new()
+        .append(true)
+        .write(true)
+        .open(&index_path)?;
+
+    let index_entry = utils::index_item_from_contact(contact)?;
+    index_fp.write_all(index_entry.as_bytes())?;
+    Ok(())
+}
+
 pub fn build_index(outfile: &path::Path, dir: &path::Path) -> Result<()> {
     if !dir.is_dir() {
         return Err(anyhow!("MATES_DIR must be a directory."));

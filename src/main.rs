@@ -2,9 +2,8 @@
 extern crate anyhow;
 use anyhow::Result;
 use clap::{Arg, Command};
-use std::fs;
 use std::io;
-use std::io::{Read, Write};
+use std::io::Read;
 
 use mates::cli;
 use mates::utils;
@@ -90,6 +89,8 @@ fn main() -> Result<()> {
                 &config.vdir_path,
             );
             contact.write_create()?;
+
+            cli::index_contact(&config.index_path, &contact)?
         }
         Some(("add-email", _)) => {
             let stdin = io::stdin();
@@ -98,13 +99,7 @@ fn main() -> Result<()> {
             let contact = utils::add_contact_from_email(&config.vdir_path, &email[..])?;
             println!("{}", contact.path.display());
 
-            let mut index_fp = fs::OpenOptions::new()
-                .append(true)
-                .write(true)
-                .open(&config.index_path)?;
-
-            let index_entry = utils::index_item_from_contact(&contact)?;
-            index_fp.write_all(index_entry.as_bytes())?;
+            cli::index_contact(&config.index_path, &contact)?
         }
         Some(("edit", args)) => {
             if let Some(value) = args.value_of("file-or-query") {
