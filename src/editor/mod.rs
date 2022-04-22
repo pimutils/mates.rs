@@ -7,12 +7,12 @@ use vobject;
 
 use atomicwrites;
 
+use crate::cursive::CursiveExt;
 use cursive::theme;
 use cursive::theme::BaseColor::*;
 use cursive::theme::Color::*;
 use cursive::Cursive;
 use cursive::With;
-use crate::cursive::CursiveExt;
 
 mod widgets;
 

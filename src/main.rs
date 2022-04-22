@@ -1,10 +1,10 @@
 #[macro_use]
 extern crate anyhow;
 use anyhow::Result;
+use clap::{Arg, Command};
 use std::fs;
 use std::io;
 use std::io::{Read, Write};
-use clap::{Command, Arg};
 
 use mates::cli;
 use mates::utils;
@@ -19,7 +19,11 @@ fn main() -> Result<()> {
         .subcommand(
             Command::new("mutt-query")
                 .about("Search for contact, output is usable for mutt's query_command.")
-                .arg(Arg::new("disable-empty-line").long("disable-empty-line").help("Disable printing an empty first line"))
+                .arg(
+                    Arg::new("disable-empty-line")
+                        .long("disable-empty-line")
+                        .help("Disable printing an empty first line"),
+                )
                 .arg(Arg::new("query").required(true)),
         )
         .subcommand(
@@ -83,7 +87,8 @@ fn main() -> Result<()> {
             let contact = utils::Contact::generate(
                 args.value_of("fullname"),
                 args.value_of("email"),
-                &config.vdir_path);
+                &config.vdir_path,
+            );
             contact.write_create()?;
         }
         Some(("add-email", _)) => {

@@ -1,6 +1,6 @@
+use anyhow::Result;
 use std::borrow::ToOwned;
 use std::env;
-use anyhow::Result;
 use std::fs;
 use std::io;
 use std::io::{Read, Write};
@@ -75,7 +75,9 @@ pub fn build_index(outfile: &path::Path, dir: &path::Path) -> Result<()> {
     })?;
 
     if errors {
-        Err(anyhow!("Several errors happened while generating the index."))
+        Err(anyhow!(
+            "Several errors happened while generating the index."
+        ))
     } else {
         Ok(())
     }
