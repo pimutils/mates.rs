@@ -34,6 +34,12 @@ fn main() -> Result<()> {
         )
         .subcommand(
             Command::new("add")
+                .about("Manually add a contacts email id and full name.")
+                .arg(Arg::new("email").required(true))
+                .arg(Arg::new("fullname")),
+        )
+        .subcommand(
+            Command::new("add-email")
                 .about("Take mail from stdin, add sender to contacts. Print filename."),
         )
         .subcommand(
@@ -73,7 +79,14 @@ fn main() -> Result<()> {
                 cli::email_query(&config, value)?
             }
         }
-        Some(("add", _)) => {
+        Some(("add", args)) => {
+            let contact = utils::Contact::generate(
+                args.value_of("fullname"),
+                args.value_of("email"),
+                &config.vdir_path);
+            contact.write_create()?;
+        }
+        Some(("add-email", _)) => {
             let stdin = io::stdin();
             let mut email = String::new();
             stdin.lock().read_to_string(&mut email)?;
