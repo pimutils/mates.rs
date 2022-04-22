@@ -112,9 +112,13 @@ pub fn edit_contact(config: &Configuration, query: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn mutt_query<'a>(config: &Configuration, query: &str) -> Result<()> {
-    println!(""); // For some reason mutt requires an empty line
-                  // We need to ignore errors here, otherwise mutt's UI will glitch
+pub fn mutt_query(config: &Configuration, disable_first_line: bool, query: &str) -> Result<()> {
+    // For some reason mutt requires an empty line
+    // We need to ignore errors here, otherwise mutt's UI will glitch
+    if !disable_first_line {
+        println!();
+    }
+
     if let Ok(items) = utils::index_query(config, query) {
         for item in items {
             if item.email.len() > 0 && item.name.len() > 0 {
@@ -125,14 +129,14 @@ pub fn mutt_query<'a>(config: &Configuration, query: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn file_query<'a>(config: &Configuration, query: &str) -> Result<()> {
+pub fn file_query(config: &Configuration, query: &str) -> Result<()> {
     for path in utils::file_query(config, query)?.iter() {
         println!("{}", path.display());
     }
     Ok(())
 }
 
-pub fn email_query<'a>(config: &Configuration, query: &str) -> Result<()> {
+pub fn email_query(config: &Configuration, query: &str) -> Result<()> {
     for item in utils::index_query(config, query)? {
         if item.name.len() > 0 && item.email.len() > 0 {
             println!("{} <{}>", item.name, item.email);

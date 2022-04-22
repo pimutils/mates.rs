@@ -19,17 +19,18 @@ fn main() -> Result<()> {
         .subcommand(
             SubCommand::with_name("mutt-query")
                 .about("Search for contact, output is usable for mutt's query_command.")
-                .arg(Arg::with_name("query").index(1)),
+                .arg(Arg::with_name("disable-empty-line").long("disable-empty-line").help("Disable printing an empty first line"))
+                .arg(Arg::with_name("query").required(true)),
         )
         .subcommand(
             SubCommand::with_name("file-query")
                 .about("Search for contact, return just the filename.")
-                .arg(Arg::with_name("query").index(1)),
+                .arg(Arg::with_name("query").required(true)),
         )
         .subcommand(
             SubCommand::with_name("email-query")
                 .about("Search for contact, return \"name <email>\".")
-                .arg(Arg::with_name("query").index(1)),
+                .arg(Arg::with_name("query").required(true)),
         )
         .subcommand(
             SubCommand::with_name("add")
@@ -38,7 +39,7 @@ fn main() -> Result<()> {
         .subcommand(
             SubCommand::with_name("edit")
                 .about("Open contact (given by filepath or search-string) interactively.")
-                .arg(Arg::with_name("file-or-query").index(1)),
+                .arg(Arg::with_name("file-or-query").required(true)),
         )
         .get_matches();
 
@@ -50,25 +51,25 @@ fn main() -> Result<()> {
     };
 
     match app.subcommand() {
-        ("index", Some(_subs)) => {
+        ("index", Some(_args)) => {
             println!(
                 "Rebuilding index file \"{}\"...",
                 config.index_path.display()
             );
             cli::build_index(&config.index_path, &config.vdir_path)?;
         }
-        ("mutt-query", Some(subs)) => {
-            if let Some(value) = subs.value_of("query") {
-                cli::mutt_query(&config, value)?
+        ("mutt-query", Some(args)) => {
+            if let Some(value) = args.value_of("query") {
+                cli::mutt_query(&config, args.is_present("disable-empty-line"), value)?
             }
         }
-        ("file-query", Some(subs)) => {
-            if let Some(value) = subs.value_of("query") {
+        ("file-query", Some(args)) => {
+            if let Some(value) = args.value_of("query") {
                 cli::file_query(&config, value)?
             }
         }
-        ("email-query", Some(subs)) => {
-            if let Some(value) = subs.value_of("query") {
+        ("email-query", Some(args)) => {
+            if let Some(value) = args.value_of("query") {
                 cli::email_query(&config, value)?
             }
         }
@@ -87,8 +88,8 @@ fn main() -> Result<()> {
             let index_entry = utils::index_item_from_contact(&contact)?;
             index_fp.write_all(index_entry.as_bytes())?;
         }
-        ("edit", Some(subs)) => {
-            if let Some(value) = subs.value_of("file-or-query") {
+        ("edit", Some(args)) => {
+            if let Some(value) = args.value_of("file-or-query") {
                 cli::edit_contact(&config, value)?
             }
         }

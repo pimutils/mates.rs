@@ -1,7 +1,7 @@
 [package]
 name = "mates"
-version = "0.3.0"
-authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>"]
+version = "1.0.0"
+authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>", "Shaleen Jain <shaleen@jain.sh>"]
 license = "MIT"
 keywords = ["vdir", "vcard", "contacts", "addressbook"]
 readme = "README.md"
