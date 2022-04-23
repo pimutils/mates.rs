@@ -1,7 +1,7 @@
 [package]
 name = "mates"
-version = "0.3.0"
-authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>"]
+version = "1.0.0"
+authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>", "Shaleen Jain <shaleen@jain.sh>"]
 license = "MIT"
 keywords = ["vdir", "vcard", "contacts", "addressbook"]
 readme = "README.md"
@@ -11,22 +11,13 @@ documentation = "https://github.com/untitaker/mates.rs"
 homepage = "https://github.com/untitaker/mates.rs"
 repository = "https://github.com/untitaker/mates.rs"
 
-[lib]
-name = "mates"
-path = "src/mates/lib.rs"
-
-[[bin]]
-name = "mates"
-test = false
-doc = false
+edition = "2018"
 
 [dependencies]
 uuid = { version = "0.5", features = ["v4"] }
-atomicwrites = "0.1"
+atomicwrites = "0.3"
 email = "0.0"
-clap = "2.31"
-vobject = "0.2"
-cursive = "0.5"
-
-[build-dependencies]
-clap = "2.31"
+clap = "3.1"
+vobject = "0.7"
+cursive = "0.17"
+anyhow = "1.0"
