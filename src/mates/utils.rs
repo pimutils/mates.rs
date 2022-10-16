@@ -40,7 +40,7 @@ impl CustomPathExt for path::Path {
 }
 
 pub fn handle_process(process: &mut process::Child) -> io::Result<()> {
-    let exitcode = try!(process.wait());
+    let exitcode = process.wait()?;
     if !exitcode.success() {
         return Err(io::Error::new(
             io::ErrorKind::Other,
@@ -97,10 +97,10 @@ pub struct Contact {
 
 impl Contact {
     pub fn from_file<P: AsRef<path::Path>>(path: P) -> io::Result<Contact> {
-        let mut contact_file = try!(fs::File::open(&path));
+        let mut contact_file = fs::File::open(&path)?;
         let contact_string = {
             let mut x = String::new();
-            try!(contact_file.read_to_string(&mut x));
+            contact_file.read_to_string(&mut x)?;
             x
         };
 
@@ -135,9 +135,9 @@ impl Contact {
         let string = write_component(&self.component);
         let af = AtomicFile::new(&self.path, DisallowOverwrite);
 
-        try!(af.write(|f| {
+        af.write(|f| {
             f.write_all(string.as_bytes())
-        }));
+        })?;
         Ok(())
     }
 }
@@ -162,16 +162,16 @@ fn generate_component(uid: String, fullname: Option<&str>, email: Option<&str>) 
 }
 
 pub fn index_query<'a>(config: &Configuration, query: &str) -> io::Result<IndexIterator> {
-    let mut process = try!(
+    let mut process =
         command_from_config(&config.grep_cmd[..])
         .arg(query)
         .arg(&config.index_path)
         .stdin(process::Stdio::piped())
         .stdout(process::Stdio::piped())
         .stderr(process::Stdio::inherit())
-        .spawn());
+        .spawn()?;
 
-    try!(handle_process(&mut process));
+    handle_process(&mut process)?;
 
     let stream = match process.stdout.as_mut() {
         Some(x) => x,
@@ -182,7 +182,7 @@ pub fn index_query<'a>(config: &Configuration, query: &str) -> io::Result<IndexI
     };
 
     let mut output = String::new();
-    try!(stream.read_to_string(&mut output));
+    stream.read_to_string(&mut output)?;
     Ok(IndexIterator::new(&output))
 }
 
@@ -191,7 +191,7 @@ pub fn index_query<'a>(config: &Configuration, query: &str) -> io::Result<IndexI
 pub fn file_query(config: &Configuration, query: &str) -> io::Result<HashSet<path::PathBuf>> {
     let mut rv: HashSet<path::PathBuf> = HashSet::new();
     rv.extend(
-        try!(index_query(config, query)).filter_map(|x| x.filepath)
+        index_query(config, query)?.filter_map(|x| x.filepath)
     );
     Ok(rv)
 }
@@ -251,7 +251,7 @@ pub fn add_contact_from_email(contact_dir: &path::Path, email_input: &str) -> io
     };
     let (fullname, email) = parse_from_header(&from_header);
     let contact = Contact::generate(fullname, email, contact_dir);
-    try!(contact.write_create());
+    contact.write_create()?;
     Ok(contact)
 }
 
