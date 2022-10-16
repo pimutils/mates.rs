@@ -57,5 +57,5 @@ pub fn cli_main<P: AsRef<Path>>(filename: P) {
     drop(siv);  // Necessary to be able to write text immediately afterwards
 
     let af = atomicwrites::AtomicFile::new(filename, atomicwrites::AllowOverwrite);
-    af.write(|mut f| f.write_all(vobject::write_component(&vobj).as_bytes())).unwrap();
+    af.write(|f| f.write_all(vobject::write_component(&vobj).as_bytes())).unwrap();
 }
