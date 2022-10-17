@@ -56,7 +56,7 @@ pub struct IndexIterator {
 }
 
 impl IndexIterator {
-    fn new(output: &String) -> IndexIterator {
+    fn new(output: &str) -> IndexIterator {
         let rv = output.split('\n').map(|x| x.to_string()).collect();
         IndexIterator {
             linebuffer: rv
@@ -214,7 +214,7 @@ pub fn index_item_from_contact(contact: &Contact) -> io::Result<String> {
 }
 
 /// Return a tuple (fullname, email)
-pub fn parse_from_header<'a>(s: &'a String) -> (Option<&'a str>, Option<&'a str>) {
+pub fn parse_from_header<'a>(s: &'a str) -> (Option<&'a str>, Option<&'a str>) {
     let mut split = s.rsplitn(2, '<');
     let email = match split.next() {
         Some(x) => Some(x.trim_end_matches('>')),
