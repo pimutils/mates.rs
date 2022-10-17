@@ -85,12 +85,9 @@ fn build_index(outfile: &path::Path, dir: &path::Path) -> MainResult<()> {
 }
 
 pub fn cli_main() {
-    match cli_main_raw() {
-        Err(e) => {
-            eprintln!("{}", e);
-            process::exit(1);
-        },
-        _ => ()
+    if let Err(e) = cli_main_raw() {
+        eprintln!("{}", e);
+        process::exit(1);
     };
 }
 
