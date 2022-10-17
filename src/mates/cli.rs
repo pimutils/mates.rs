@@ -87,7 +87,7 @@ fn build_index(outfile: &path::Path, dir: &path::Path) -> MainResult<()> {
 pub fn cli_main() {
     match cli_main_raw() {
         Err(e) => {
-            writeln!(&mut io::stderr(), "{}", e).unwrap();
+            eprintln!("{}", e);
             process::exit(1);
         },
         _ => ()
