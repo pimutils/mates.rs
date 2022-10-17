@@ -218,7 +218,7 @@ pub fn parse_from_header(s: & str) -> (Option<& str>, Option<& str>) {
     let mut split = s.rsplitn(2, '<');
     let email = match split.next() {
         Some(x) => Some(x.trim_end_matches('>')),
-        None => Some(&s[..])
+        None => Some(s)
     };
     let name = split.next();
     (name, email)
