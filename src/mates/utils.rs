@@ -161,7 +161,7 @@ fn generate_component(uid: String, fullname: Option<&str>, email: Option<&str>) 
     comp
 }
 
-pub fn index_query<'a>(config: &Configuration, query: &str) -> io::Result<IndexIterator> {
+pub fn index_query(config: &Configuration, query: &str) -> io::Result<IndexIterator> {
     let mut process =
         command_from_config(&config.grep_cmd[..])
         .arg(query)
@@ -214,7 +214,7 @@ pub fn index_item_from_contact(contact: &Contact) -> io::Result<String> {
 }
 
 /// Return a tuple (fullname, email)
-pub fn parse_from_header<'a>(s: &'a str) -> (Option<&'a str>, Option<&'a str>) {
+pub fn parse_from_header(s: & str) -> (Option<& str>, Option<& str>) {
     let mut split = s.rsplitn(2, '<');
     let email = match split.next() {
         Some(x) => Some(x.trim_end_matches('>')),

@@ -182,7 +182,7 @@ fn edit_contact(config: &Configuration, query: &str) -> MainResult<()> {
     Ok(())
 }
 
-fn mutt_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
+fn mutt_query(config: &Configuration, query: &str) -> MainResult<()> {
     println!();  // For some reason mutt requires an empty line
     // We need to ignore errors here, otherwise mutt's UI will glitch
     if let Ok(items) = utils::index_query(config, query) {
@@ -195,14 +195,14 @@ fn mutt_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
     Ok(())
 }
 
-fn file_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
+fn file_query(config: &Configuration, query: &str) -> MainResult<()> {
     for path in utils::file_query(config, query)?.iter() {
         println!("{}", path.display());
     };
     Ok(())
 }
 
-fn email_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
+fn email_query(config: &Configuration, query: &str) -> MainResult<()> {
     for item in utils::index_query(config, query)? {
         if !item.name.is_empty() && !item.email.is_empty() {
             println!("{} <{}>", item.name, item.email);
