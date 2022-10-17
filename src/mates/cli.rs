@@ -17,7 +17,7 @@ use editor;
 
 #[inline]
 fn get_pwd() -> path::PathBuf {
-    env::current_dir().ok().expect("Failed to get CWD")
+    env::current_dir().expect("Failed to get CWD")
 }
 
 #[inline]
