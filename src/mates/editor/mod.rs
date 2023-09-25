@@ -1,16 +1,16 @@
 use std::fs;
-use std::io::{Read,Write};
-use std::process;
+use std::io::{Read, Write};
 use std::path::Path;
+use std::process;
 
 use vobject;
 
 use atomicwrites;
 
-use cursive::Cursive;
 use cursive::theme;
-use cursive::theme::Color::*;
 use cursive::theme::BaseColor::*;
+use cursive::theme::Color::*;
+use cursive::Cursive;
 
 mod widgets;
 
@@ -28,7 +28,6 @@ pub fn cli_main<P: AsRef<Path>>(filename: P) {
         println!("Expected VCARD component, got {}", vobj.name);
         process::exit(1);
     }
-
 
     let (editor, editor_view) = VcardEditor::new(vobj);
 
@@ -49,13 +48,14 @@ pub fn cli_main<P: AsRef<Path>>(filename: P) {
             title_secondary: Dark(White),
             highlight: Light(White),
             highlight_inactive: Dark(Black),
-        }
+        },
     });
     siv.run();
 
     vobj = editor.to_vobject(&mut siv);
-    drop(siv);  // Necessary to be able to write text immediately afterwards
+    drop(siv); // Necessary to be able to write text immediately afterwards
 
     let af = atomicwrites::AtomicFile::new(filename, atomicwrites::AllowOverwrite);
-    af.write(|mut f| f.write_all(vobject::write_component(&vobj).as_bytes())).unwrap();
+    af.write(|f| f.write_all(vobject::write_component(&vobj).as_bytes()))
+        .unwrap();
 }
