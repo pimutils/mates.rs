@@ -25,7 +25,7 @@ fn get_envvar(key: &str) -> Option<String> {
     match env::var(key) {
         Ok(x) => Some(x),
         Err(env::VarError::NotPresent) => None,
-        Err(env::VarError::NotUnicode(_)) => panic!(format!("{} is not unicode.", key)),
+        Err(env::VarError::NotUnicode(_)) => panic!("{} is not unicode.", key),
     }
 }
 
@@ -34,7 +34,7 @@ fn build_index(outfile: &path::Path, dir: &path::Path) -> MainResult<()> {
         return Err(MainError::new("MATES_DIR must be a directory.").into());
     };
 
-    let af = AtomicFile::new(&outfile, AllowOverwrite);
+    let af = AtomicFile::new(outfile, AllowOverwrite);
     let mut errors = false;
 
     try!(af.write::<(), io::Error, _>(|outf| {
@@ -115,15 +115,15 @@ pub fn cli_main_raw() -> MainResult<()> {
         },
         "mutt-query" => {
             let query = submatches.value_of("query").unwrap_or("");
-            try!(mutt_query(&config, &query[..]));
+            try!(mutt_query(&config, query));
         },
         "file-query" => {
             let query = submatches.value_of("query").unwrap_or("");
-            try!(file_query(&config, &query[..]));
+            try!(file_query(&config, query));
         },
         "email-query" => {
             let query = submatches.value_of("query").unwrap_or("");
-            try!(email_query(&config, &query[..]));
+            try!(email_query(&config, query));
         },
         "add" => {
             let stdin = io::stdin();
@@ -145,7 +145,7 @@ pub fn cli_main_raw() -> MainResult<()> {
         },
         "edit" => {
             let query = submatches.value_of("file-or-query").unwrap_or("");
-            try!(edit_contact(&config, &query[..]));
+            try!(edit_contact(&config, query));
         },
         _ => {
             return Err(MainError::new(format!("Invalid command: {}", command)).into());
@@ -161,7 +161,7 @@ fn edit_contact(config: &Configuration, query: &str) -> MainResult<()> {
         try!(utils::file_query(config, query)).into_iter().collect()
     };
 
-    if results.len() < 1 {
+    if results.is_empty() {
         return Err(MainError::new("No such contact.").into());
     } else if results.len() > 1 {
         return Err(MainError::new("Ambiguous query.").into());
@@ -177,7 +177,7 @@ fn edit_contact(config: &Configuration, query: &str) -> MainResult<()> {
         fcontent
     };
 
-    if (&fcontent[..]).trim().len() == 0 {
+    if fcontent[..].trim().is_empty() {
         try!(fs::remove_file(fpath));
         return Err(MainError::new("Contact emptied, file removed.").into());
     };
@@ -186,11 +186,11 @@ fn edit_contact(config: &Configuration, query: &str) -> MainResult<()> {
 }
 
 fn mutt_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
-    println!("");  // For some reason mutt requires an empty line
+    println!();  // For some reason mutt requires an empty line
     // We need to ignore errors here, otherwise mutt's UI will glitch
     if let Ok(items) = utils::index_query(config, query) {
         for item in items {
-            if item.email.len() > 0 && item.name.len() > 0 {
+            if !item.email.is_empty() && !item.name.is_empty() {
                 println!("{}\t{}", item.email, item.name);
             };
         };
@@ -207,7 +207,7 @@ fn file_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
 
 fn email_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
     for item in try!(utils::index_query(config, query)) {
-        if item.name.len() > 0 && item.email.len() > 0 {
+        if !item.name.is_empty() && !item.email.is_empty() {
             println!("{} <{}>", item.name, item.email);
         };
     };
@@ -226,7 +226,7 @@ impl Configuration {
             index_path: match get_envvar("MATES_INDEX") {
                 Some(x) => path::PathBuf::from(&x),
                 None => match get_envvar("HOME") {
-                    Some(home) => get_pwd().join(&home).join(".mates_index"),
+                    Some(home) => get_pwd().join(home).join(".mates_index"),
                     None => return Err("Unable to determine user's home directory.".to_owned())
                 }
             },
@@ -248,14 +248,14 @@ pub struct MainError {
     desc: String,
 }
 
-pub type MainResult<T> = Result<T, Box<Error>>;
+pub type MainResult<T> = Result<T, Box<dyn Error>>;
 
 impl Error for MainError {
     fn description(&self) -> &str {
         &self.desc[..]
     }
 
-    fn cause(&self) -> Option<&Error> {
+    fn cause(&self) -> Option<&dyn Error> {
         None
     }
 }

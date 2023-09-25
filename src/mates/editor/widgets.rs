@@ -70,7 +70,7 @@ struct EmailsEditor;
 
 impl EmailsEditor {
     pub fn pop_from_vobject(vobj: &mut vobject::Component) -> (Self, views::IdView<views::TextArea>) {
-        let props = vobj.props.remove("EMAIL").unwrap_or_else(Vec::new);
+        let props = vobj.props.remove("EMAIL").unwrap_or_default();
         (EmailsEditor, mprops_to_view(props).with_id("emails"))
     }
 
@@ -84,7 +84,7 @@ struct TelEditor;
 
 impl TelEditor {
     pub fn pop_from_vobject(vobj: &mut vobject::Component) -> (Self, views::IdView<views::TextArea>) {
-        let props = vobj.props.remove("TEL").unwrap_or_else(Vec::new);
+        let props = vobj.props.remove("TEL").unwrap_or_default();
         (TelEditor, mprops_to_view(props).with_id("tels"))
     }
 
@@ -129,10 +129,10 @@ impl VcardEditor {
             .full_screen();
 
         let rv = VcardEditor {
-            vobj: vobj,
-            fn_field: fn_field,
-            email_field: email_field,
-            tel_field: tel_field
+            vobj,
+            fn_field,
+            email_field,
+            tel_field
         };
 
         (rv, cols)

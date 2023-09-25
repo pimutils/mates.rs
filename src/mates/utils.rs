@@ -68,10 +68,7 @@ impl Iterator for IndexIterator {
     type Item = IndexItem;
 
     fn next(&mut self) -> Option<IndexItem> {
-        match self.linebuffer.pop() {
-            Some(x) => Some(IndexItem::new(x)),
-            None => None
-        }
+        self.linebuffer.pop().map(IndexItem::new)
     }
 }
 
@@ -88,10 +85,7 @@ impl IndexItem {
         IndexItem {
             email: parts.next().unwrap_or("").to_string(),
             name: parts.next().unwrap_or("").to_string(),
-            filepath: match parts.next() {
-                Some(x) => Some(path::PathBuf::from(x)),
-                None => None
-            }
+            filepath: parts.next().map(path::PathBuf::from)
         }
     }
 }
@@ -134,7 +128,7 @@ impl Contact {
             };
             (uid, contact_path)
         };
-        Contact { path: contact_path, component: generate_component(uid.into(), fullname, email) }
+        Contact { path: contact_path, component: generate_component(uid, fullname, email) }
     }
 
     pub fn write_create(&self) -> io::Result<()> {
@@ -170,7 +164,7 @@ fn generate_component(uid: String, fullname: Option<&str>, email: Option<&str>) 
 pub fn index_query<'a>(config: &Configuration, query: &str) -> io::Result<IndexIterator> {
     let mut process = try!(
         command_from_config(&config.grep_cmd[..])
-        .arg(&query[..])
+        .arg(query)
         .arg(&config.index_path)
         .stdin(process::Stdio::piped())
         .stdout(process::Stdio::piped())
@@ -220,10 +214,10 @@ pub fn index_item_from_contact(contact: &Contact) -> io::Result<String> {
 }
 
 /// Return a tuple (fullname, email)
-pub fn parse_from_header<'a>(s: &'a String) -> (Option<&'a str>, Option<&'a str>) {
+pub fn parse_from_header(s: &String) -> (Option<&str>, Option<&str>) {
     let mut split = s.rsplitn(2, '<');
     let email = match split.next() {
-        Some(x) => Some(x.trim_right_matches('>')),
+        Some(x) => Some(x.trim_end_matches('>')),
         None => Some(&s[..])
     };
     let name = split.next();
