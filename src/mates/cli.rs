@@ -1,19 +1,19 @@
 use std::borrow::ToOwned;
 use std::env;
 use std::error::Error;
-use std::fmt;use std::fs;
-use std::io::{Read,Write};
+use std::fmt;
+use std::fs;
 use std::io;
+use std::io::{Read, Write};
 use std::path;
 use std::process;
 
-use atomicwrites::{AtomicFile,AllowOverwrite};
+use atomicwrites::{AllowOverwrite, AtomicFile};
 
-use utils;
+use crate::app;
+use crate::editor;
+use crate::utils;
 use utils::CustomPathExt;
-use app;
-use editor;
-
 
 #[inline]
 fn get_pwd() -> path::PathBuf {
@@ -37,8 +37,8 @@ fn build_index(outfile: &path::Path, dir: &path::Path) -> MainResult<()> {
     let af = AtomicFile::new(outfile, AllowOverwrite);
     let mut errors = false;
 
-    try!(af.write::<(), io::Error, _>(|outf| {
-        for entry in try!(fs::read_dir(dir)) {
+    af.write::<(), io::Error, _>(|outf| {
+        for entry in fs::read_dir(dir)? {
             let entry = match entry {
                 Ok(x) => x,
                 Err(e) => {
@@ -59,23 +59,23 @@ fn build_index(outfile: &path::Path, dir: &path::Path) -> MainResult<()> {
                 Err(e) => {
                     println!("Error while reading {}: {}", pathbuf.display(), e);
                     errors = true;
-                    continue
+                    continue;
                 }
             };
 
             match utils::index_item_from_contact(&contact) {
                 Ok(index_string) => {
-                    try!(outf.write_all(index_string.as_bytes()));
-                },
+                    outf.write_all(index_string.as_bytes())?;
+                }
                 Err(e) => {
                     println!("Error while indexing {}: {}", pathbuf.display(), e);
                     errors = true;
-                    continue
+                    continue;
                 }
             };
-        };
+        }
         Ok(())
-    }));
+    })?;
 
     if errors {
         Err(MainError::new("Several errors happened while generating the index.").into())
@@ -89,8 +89,8 @@ pub fn cli_main() {
         Err(e) => {
             writeln!(&mut io::stderr(), "{}", e).unwrap();
             process::exit(1);
-        },
-        _ => ()
+        }
+        _ => (),
     };
 }
 
@@ -106,47 +106,49 @@ pub fn cli_main_raw() -> MainResult<()> {
         }
     };
 
-    let submatches = matches.subcommand_matches(command).expect("Internal error.");
+    let submatches = matches
+        .subcommand_matches(command)
+        .expect("Internal error.");
 
     match command {
         "index" => {
-            println!("Rebuilding index file \"{}\"...", config.index_path.display());
-            try!(build_index(&config.index_path, &config.vdir_path));
-        },
+            println!(
+                "Rebuilding index file \"{}\"...",
+                config.index_path.display()
+            );
+            build_index(&config.index_path, &config.vdir_path)?;
+        }
         "mutt-query" => {
             let query = submatches.value_of("query").unwrap_or("");
-            try!(mutt_query(&config, query));
-        },
+            mutt_query(&config, query)?;
+        }
         "file-query" => {
             let query = submatches.value_of("query").unwrap_or("");
-            try!(file_query(&config, query));
-        },
+            file_query(&config, query)?;
+        }
         "email-query" => {
             let query = submatches.value_of("query").unwrap_or("");
-            try!(email_query(&config, query));
-        },
+            email_query(&config, query)?;
+        }
         "add" => {
             let stdin = io::stdin();
             let mut email = String::new();
-            try!(stdin.lock().read_to_string(&mut email));
-            let contact = try!(utils::add_contact_from_email(
-                &config.vdir_path,
-                &email[..]
-            ));
+            stdin.lock().read_to_string(&mut email)?;
+            let contact = utils::add_contact_from_email(&config.vdir_path, &email[..])?;
             println!("{}", contact.path.display());
 
-            let mut index_fp = try!(fs::OpenOptions::new()
-                                    .append(true)
-                                    .write(true)
-                                    .open(&config.index_path));
+            let mut index_fp = fs::OpenOptions::new()
+                .append(true)
+                .write(true)
+                .open(&config.index_path)?;
 
-            let index_entry = try!(utils::index_item_from_contact(&contact));
-            try!(index_fp.write_all(index_entry.as_bytes()));
-        },
+            let index_entry = utils::index_item_from_contact(&contact)?;
+            index_fp.write_all(index_entry.as_bytes())?;
+        }
         "edit" => {
             let query = submatches.value_of("file-or-query").unwrap_or("");
-            try!(edit_contact(&config, query));
-        },
+            edit_contact(&config, query)?;
+        }
         _ => {
             return Err(MainError::new(format!("Invalid command: {}", command)).into());
         }
@@ -158,7 +160,7 @@ fn edit_contact(config: &Configuration, query: &str) -> MainResult<()> {
     let results = if get_pwd().join(query).is_file() {
         vec![path::PathBuf::from(query)]
     } else {
-        try!(utils::file_query(config, query)).into_iter().collect()
+        utils::file_query(config, query)?.into_iter().collect()
     };
 
     if results.is_empty() {
@@ -172,13 +174,13 @@ fn edit_contact(config: &Configuration, query: &str) -> MainResult<()> {
 
     let fcontent = {
         let mut fcontent = String::new();
-        let mut file = try!(fs::File::open(fpath));
-        try!(file.read_to_string(&mut fcontent));
+        let mut file = fs::File::open(fpath)?;
+        file.read_to_string(&mut fcontent)?;
         fcontent
     };
 
     if fcontent[..].trim().is_empty() {
-        try!(fs::remove_file(fpath));
+        fs::remove_file(fpath)?;
         return Err(MainError::new("Contact emptied, file removed.").into());
     };
 
@@ -186,38 +188,38 @@ fn edit_contact(config: &Configuration, query: &str) -> MainResult<()> {
 }
 
 fn mutt_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
-    println!();  // For some reason mutt requires an empty line
-    // We need to ignore errors here, otherwise mutt's UI will glitch
+    println!(); // For some reason mutt requires an empty line
+                // We need to ignore errors here, otherwise mutt's UI will glitch
     if let Ok(items) = utils::index_query(config, query) {
         for item in items {
             if !item.email.is_empty() && !item.name.is_empty() {
                 println!("{}\t{}", item.email, item.name);
             };
-        };
+        }
     };
     Ok(())
 }
 
 fn file_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
-    for path in try!(utils::file_query(config, query)).iter() {
+    for path in utils::file_query(config, query)?.iter() {
         println!("{}", path.display());
-    };
+    }
     Ok(())
 }
 
 fn email_query<'a>(config: &Configuration, query: &str) -> MainResult<()> {
-    for item in try!(utils::index_query(config, query)) {
+    for item in utils::index_query(config, query)? {
         if !item.name.is_empty() && !item.email.is_empty() {
             println!("{} <{}>", item.name, item.email);
         };
-    };
+    }
     Ok(())
 }
 
 pub struct Configuration {
     pub index_path: path::PathBuf,
     pub vdir_path: path::PathBuf,
-    pub grep_cmd: String
+    pub grep_cmd: String,
 }
 
 impl Configuration {
@@ -227,21 +229,25 @@ impl Configuration {
                 Some(x) => path::PathBuf::from(&x),
                 None => match get_envvar("HOME") {
                     Some(home) => get_pwd().join(home).join(".mates_index"),
-                    None => return Err("Unable to determine user's home directory.".to_owned())
-                }
+                    None => return Err("Unable to determine user's home directory.".to_owned()),
+                },
             },
             vdir_path: match get_envvar("MATES_DIR") {
                 Some(x) => path::PathBuf::from(&x),
-                None => return Err("MATES_DIR must be set to your vdir path (directory of vcf-files).".to_owned())
+                None => {
+                    return Err(
+                        "MATES_DIR must be set to your vdir path (directory of vcf-files)."
+                            .to_owned(),
+                    )
+                }
             },
             grep_cmd: match get_envvar("MATES_GREP") {
                 Some(x) => x,
-                None => "grep -i".to_owned()
-            }
+                None => "grep -i".to_owned(),
+            },
         })
     }
 }
-
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct MainError {
@@ -262,14 +268,12 @@ impl Error for MainError {
 
 impl fmt::Display for MainError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.description().fmt(f)
+        self.desc.fmt(f)
     }
 }
 
 impl MainError {
     pub fn new<T: Into<String>>(desc: T) -> Self {
-        MainError {
-            desc: desc.into(),
-        }
+        MainError { desc: desc.into() }
     }
 }
